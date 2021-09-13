@@ -7,7 +7,7 @@ public class Main {
 	
 	public static void main(String[] args){
 		MapGrid mapGrid=new MapGrid();
-		while(true) {
+		while(true) {                                    //// later will be wrapped in THREADS- each business will open new thread
 			Scanner input = new Scanner(System.in);  // Create a Scanner object
 		    System.out.println("Enter the kind of new business:(food, fashion, health or electronics)");
 		    String kind = input.nextLine();
