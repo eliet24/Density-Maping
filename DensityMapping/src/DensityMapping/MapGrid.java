@@ -82,7 +82,7 @@ double square_length;
 	 return squareSum;
 		}
 	
-	public String max_arrayIndex(double [][] sums) {   //return the max sum value index of the upper left square of the big business square 
+	public String max_arrayIndex(double [][] sums) {   //return the index (only upper left square of the big buisness square) of the max sum value of the sums array 
 		double max=0;
 		String max_index = null;
 		for (int i=0; i<sums[0].length; i++)
