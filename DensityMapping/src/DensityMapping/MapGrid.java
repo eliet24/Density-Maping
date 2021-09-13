@@ -45,7 +45,7 @@ double square_length;
 		}
 	}
 	
-	public double calc_dist(int i, int j, int k, int l) {
+	public double calc_dist(int i, int j, int k, int l) {   //calculate distance between the centers of two squares in the grid
 		Square a=grid[i][j];
 		Square b= grid[k][l];
 		Point center_a= a.calc_singleSquareCenter();
