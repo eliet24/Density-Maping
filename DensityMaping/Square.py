@@ -56,3 +56,6 @@ class Square:
 
     def calc_diagonal(self):
         return math.sqrt(2) * self.square_len
+
+    def get_square_info(self):
+        return f"Square at grid index ({self.square_index_row}, {self.square_index_column}) with value {self.value}"
