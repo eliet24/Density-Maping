@@ -1,27 +1,28 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Circle
-from mpl_toolkits.mplot3d import Axes3D
 import tkinter as tk
-from tkinter import ttk
 from tkinter.simpledialog import askfloat, askinteger
 import math
 import random
 import matplotlib.colors as mcolors
 import numpy as np
+from plotly.subplots import make_subplots
 from scipy.stats import multivariate_normal
 import openpyxl
 from tkinter.filedialog import askopenfilename
 from tkinter import *
 import customtkinter
+import plotly.graph_objects as go
+from scipy.stats import multivariate_normal
 
 # Define canvas as a global variable
-canvas = None
+canvas = None  # Initialize canvas variable
 
 
 # Function to draw the grid
 def draw_grid(square_size, grid_size):
-    global canvas  # Use the global canvas variable
+    global canvas
     fig, ax = plt.subplots()
 
     # Draw grid of squares
@@ -41,17 +42,16 @@ def draw_grid(square_size, grid_size):
     canvas_widget.grid(row=4, column=0, columnspan=8)
     canvas.draw()
 
+    # Return the axis to keep a reference
+    return ax
+
 
 # Function to draw value on a square
-def draw_value_on_square(value, row, column, square_size):
-    global canvas  # Use the global canvas variable
+def draw_value_on_square(value, row, column, square_size, ax):
     x = column * square_size + square_size / 2
     y = row * square_size + square_size / 2
 
-    plt.text(x, y, str(value), ha='center', va='center', color='black', fontweight='bold')
-
-    # Update the canvas
-    canvas.draw()
+    ax.text(x, y, str(value), ha='center', va='center', color='black', fontweight='bold')
 
 
 # Function to handle "Put Values On Grid" button click event
@@ -70,9 +70,10 @@ def on_put_values_on_grid_button_click():
         # Flatten the values in the A column
         values = [cell.value for row in sheet.iter_cols(min_col=1, max_col=1, max_row=grid_size ** 2) for cell in row]
 
-        # Draw grid
+        # Draw grid and circles
         square_size = float(square_size_entry.get())
-        draw_grid(square_size, grid_size)
+        ax = draw_grid(square_size, grid_size)
+        circles = []  # Assume no circles for now
 
         # Iterate through the values and put them on the grid
         for i, value in enumerate(values):
@@ -80,12 +81,17 @@ def on_put_values_on_grid_button_click():
             row = i // grid_size
             column = i % grid_size
 
-            draw_value_on_square(value, row, column, square_size)
+            # Draw value on the grid
+            draw_value_on_square(value, row, column, square_size, ax)
+
+        # Draw circles
+        draw_grid_with_circles(square_size, grid_size, circles, ax)
 
         # Update the canvas outside the loop
         canvas.draw()
 
-# Function to draw a value on the grid
+
+''''# Function to draw a value on the grid
 def draw_value_on_grid(value, row, column):
     # Calculate the center of the grid square
     center_x = (column - 0.5) * float(square_size_entry.get())
@@ -94,12 +100,10 @@ def draw_value_on_grid(value, row, column):
     # Draw the value on the grid
     plt.text(center_x, center_y, str(value), ha='center', va='center', color='black', fontweight='bold')
     on_draw_button_click.canvas.draw()
+'''
 
 
-def draw_grid_with_circles(square_size, grid_size, circles):
-    # Create a new figure and axis
-    fig, ax = plt.subplots()
-
+def draw_grid_with_circles(square_size, grid_size, circles, ax):
     # Draw grid of squares
     for i in range(grid_size):
         for j in range(grid_size):
@@ -109,27 +113,18 @@ def draw_grid_with_circles(square_size, grid_size, circles):
 
     # Draw circles
     for i, circle in enumerate(circles, start=1):
-        center_x, center_y, radius, color, variance = circle
-        circle_patch = Circle((center_x, center_y), radius, fill=True, color=color)
+        center_x, center_y, radius, color, _ = circle
+        circle_patch = Circle((center_x, center_y), radius, fill=None, edgecolor=color)
         ax.add_patch(circle_patch)
-        ax.text(center_x, center_y, str(i), ha='center', va='center', color='white', fontweight='bold')
+        ax.text(center_x, center_y, str(i), ha='center', va='center', color='black', fontweight='bold')
 
     # Set axis limits and display grid
-    plt.xlim(0, grid_size * square_size)
-    plt.ylim(0, grid_size * square_size)
-    plt.gca().set_aspect('equal', adjustable='box')
-
-    # Show the plot
-    canvas = FigureCanvasTkAgg(fig, master=window)
-    canvas_widget = canvas.get_tk_widget()
-    canvas_widget.grid(row=4, column=0, columnspan=8)
-    canvas.draw()
-
-    # Return the canvas to keep a reference
-    return canvas
+    ax.set_xlim(0, grid_size * square_size)
+    ax.set_ylim(0, grid_size * square_size)
+    ax.set_aspect('equal', adjustable='box')
 
 
-def draw_3d_perspective(circles):
+'''def draw_3d_perspective(circles):
     fig_3d = plt.figure()
     ax_3d = fig_3d.add_subplot(111, projection='3d')
 
@@ -158,6 +153,35 @@ def draw_3d_perspective(circles):
     ax_3d.set_zlabel('Z')
 
     plt.show()
+'''
+
+
+# Function to draw 3D perspective for all circles on the same axis
+def draw_3d_perspective(circles):
+    fig = go.Figure()
+
+    for i, circle in enumerate(circles):
+        center_x, center_y, radius, color, variance = circle
+        if variance is not None:
+            x = np.linspace(center_x - 3 * variance, center_x + 3 * variance, 100)
+            y = np.linspace(center_y - 3 * variance, center_y + 3 * variance, 100)
+            x, y = np.meshgrid(x, y)
+
+            pos = np.empty(x.shape + (2,))
+            pos[:, :, 0] = x
+            pos[:, :, 1] = y
+
+            rv = multivariate_normal([center_x, center_y], [[variance, 0], [0, variance]])
+            z = rv.pdf(pos)
+
+            # Add trace for each circle to the same figure
+            fig.add_trace(go.Surface(x=x, y=y, z=z, colorscale=[[0, color], [1, color]], opacity=0.5, showscale=False))
+
+    # Set scene camera for better perspective
+    fig.update_layout(scene=dict(camera=dict(up=dict(x=0, y=0, z=1), center=dict(x=0, y=0, z=0), eye=dict(x=1.25, y=1.25, z=1.25))))
+
+    # Show the plot
+    fig.show()
 
 
 # Function to handle "Move Circle" button click event
@@ -227,23 +251,41 @@ def on_change_radius_button_click():
 
 # Function to handle "Draw Grid" button click event
 def on_draw_button_click():
+    global canvas  # Use the global canvas variable
     square_size = float(square_size_entry.get())
     grid_size = int(grid_size_entry.get())
 
-    # Check if the entries are empty and provide def ault values
+    # Check if the entries are empty and provide default values
     circles = []
     for circle_info in new_circles:
-        center_x, center_y, radius, color = circle_info[:4]
-        if len(circle_info) == 5:  # Check if variance is provided
-            variance = circle_info[4]
-        else:
-            variance = None
+        center_x, center_y, radius, color, variance = circle_info
         circles.append((center_x, center_y, radius, color, variance))
 
-    # Draw grid and circles, keep the canvas reference
-    canvas = draw_grid_with_circles(square_size, grid_size, circles)
-    # Store the canvas reference in a global variable
-    on_draw_button_click.canvas = canvas
+    if not hasattr(on_draw_button_click, 'canvas') or on_draw_button_click.canvas is None:
+        # If canvas is not created yet, create it
+        fig, ax = plt.subplots()
+        on_draw_button_click.canvas = FigureCanvasTkAgg(fig, master=window)
+        canvas_widget = on_draw_button_click.canvas.get_tk_widget()
+        canvas_widget.grid(row=4, column=0, columnspan=8)
+
+    # Use the stored canvas to get the axes
+    ax = on_draw_button_click.canvas.figure.gca()
+
+    # Clear previous drawings
+    ax.clear()
+
+    # Draw grid
+    ax = draw_grid(square_size, grid_size)
+
+    # Draw circles
+    for i, circle_info in enumerate(circles):
+        center_x, center_y, radius, color, variance = circle_info
+        circle_patch = Circle((center_x, center_y), radius, fill=None, edgecolor=color)
+        ax.add_patch(circle_patch)
+        ax.text(center_x, center_y, str(i + 1), ha='center', va='center', color='white', fontweight='bold')
+
+    # Draw the canvas
+    on_draw_button_click.canvas.draw()
 
 
 # Function to handle "Delete Circle" button click event
@@ -253,6 +295,16 @@ def on_delete_circle_button_click():
         del new_circles[circle_number - 1]
         on_draw_button_click.canvas.draw()
         update_circle_list()
+
+
+# delete all the grid elements and the grid
+def on_delete_all_button_click():
+    global canvas, new_circles
+    new_circles = []  # Clear the list of circles
+    if hasattr(on_delete_all_button_click, 'canvas') and on_delete_all_button_click.canvas is not None:
+        on_delete_all_button_click.canvas.get_tk_widget().destroy()  # Destroy the canvas widget
+        on_delete_all_button_click.canvas = None  # Reset the canvas variable
+
 
 
 # Function to handle "3D Perspective" button click event
@@ -297,8 +349,18 @@ def on_calculate_distance_button_click():
                 distance_label.configure(
                     text=f"Distance between centers: {distance:.2f} (Circles {circle_number1} and {circle_number2})")
 
-                # Draw a line between the centers of the chosen circles
-                plt.plot([center1[0], center2[0]], [center1[1], center2[1]], linestyle='--', color='blue')
+                # Use the stored canvas to get the axes
+                ax = on_draw_button_click.canvas.figure.gca()
+
+                # Plot the line on the axes
+                ax.plot(
+                    [center1[0], center2[0]],
+                    [center1[1], center2[1]],
+                    linestyle='--',
+                    color='blue'
+                )
+
+                # Draw the canvas
                 on_draw_button_click.canvas.draw()
 
             else:
@@ -332,7 +394,11 @@ window.title("Grid and Circle Drawer")
 # Create and place the "Put Values On Grid" button
 # put_values_on_grid_button = ttk.Button(window, text="Put Values On Grid", command=on_put_values_on_grid_button_click)
 put_values_on_grid_button = customtkinter.CTkButton(window, text="Put Values On Grid", command=on_put_values_on_grid_button_click)
-put_values_on_grid_button.grid(row=3, column=0, columnspan=3)
+put_values_on_grid_button.grid(row=3, column=0)
+
+# delete_all_button = ttk.Button(window, text="Delete All", command=on_delete_all_button_click)
+delete_all_button = customtkinter.CTkButton(window, text="Delete All", command=on_delete_all_button_click)
+delete_all_button.grid(row=4, column=0)
 
 # Create and place widgets in the window
 # tk.Label(window, text="Square Size:").grid(row=0, column=0)
@@ -349,7 +415,7 @@ grid_size_entry.grid(row=1, column=1)
 
 # draw_button = ttk.Button(window, text="Draw Grid", command=on_draw_button_click)
 draw_button = customtkinter.CTkButton(window, text="Draw Grid", command=on_draw_button_click)
-draw_button.grid(row=2, column=0, columnspan=3)
+draw_button.grid(row=2, column=0)
 
 # radius_entry = ttk.Entry(window)
 # radius_entry = customtkinter.CTkEntry(window)

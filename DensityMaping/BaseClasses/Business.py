@@ -14,10 +14,10 @@ class BusinessType(Enum):
 
 
 class Business(Circle):
-    def __init__(self, radius: float, center: Point, business_id: int, profit: int, business_type: BusinessType, var: float):
+    def __init__(self, radius: float, center: Point, business_id: int, income: float, business_type: BusinessType, var: float):
         super().__init__(radius, center)
         self.business_id = business_id
-        self.req_profit = profit
+        self.req_income = income
         self.business_type = business_type
         self.var = var
 
