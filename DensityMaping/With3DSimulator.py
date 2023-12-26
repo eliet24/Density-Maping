@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Rectangle
 import tkinter as tk
 from tkinter.simpledialog import askfloat, askinteger
 import math
@@ -18,32 +18,71 @@ from scipy.stats import multivariate_normal
 
 # Define canvas as a global variable
 canvas = None  # Initialize canvas variable
+ax = None  # Initialize axis variable
 
+
+# Define canvas as a global variable
+canvas = None  # Initialize canvas variable
+ax = None  # Initialize axis variable
+label_for_plot = None
 
 # Function to draw the grid
 def draw_grid(square_size, grid_size):
-    global canvas
+    global canvas, ax, label_for_plot
+
+    # Create a label to hold the plot
+    label_for_plot = tk.Label(window)
+    label_for_plot.grid(row=4, column=0, columnspan=8)
+
     fig, ax = plt.subplots()
 
     # Draw grid of squares
     for i in range(grid_size):
         for j in range(grid_size):
-            square = plt.Rectangle((i * square_size, j * square_size), square_size, square_size, fill=None,
+            square = Rectangle((i * square_size, j * square_size), square_size, square_size, fill=None,
                                    edgecolor='black')
             ax.add_patch(square)
 
-    plt.xlim(0, grid_size * square_size)
-    plt.ylim(0, grid_size * square_size)
-    plt.gca().set_aspect('equal', adjustable='box')
+    ax.set_xlim(0, grid_size * square_size)
+    ax.set_ylim(0, grid_size * square_size)
+    ax.set_aspect('equal', adjustable='box')
 
-    # Show the plot
-    canvas = FigureCanvasTkAgg(fig, master=window)
+    # Show the plot on the label
+    canvas = FigureCanvasTkAgg(fig, master=label_for_plot)
     canvas_widget = canvas.get_tk_widget()
-    canvas_widget.grid(row=4, column=0, columnspan=8)
+    canvas_widget.pack(expand="true", fill="both")
     canvas.draw()
+
+    # Connect mouse events to callback functions
+    canvas.mpl_connect('button_press_event', on_click)
+    canvas.mpl_connect('motion_notify_event', on_motion)
+    canvas.mpl_connect('scroll_event', on_scroll)
 
     # Return the axis to keep a reference
     return ax
+
+
+# Function to handle mouse click event
+def on_click(event):
+    pass  # Add your logic here for handling mouse click event
+
+
+# Function to handle mouse motion event
+def on_motion(event):
+    pass  # Add your logic here for handling mouse motion event
+
+
+# Function to handle scroll event
+def on_scroll(event):
+    global ax
+    if event.button == 'up':
+        ax.set_xlim(ax.get_xlim()[0] * 1.1, ax.get_xlim()[1] * 1.1)
+        ax.set_ylim(ax.get_ylim()[0] * 1.1, ax.get_ylim()[1] * 1.1)
+    elif event.button == 'down':
+        ax.set_xlim(ax.get_xlim()[0] / 1.1, ax.get_xlim()[1] / 1.1)
+        ax.set_ylim(ax.get_ylim()[0] / 1.1, ax.get_ylim()[1] / 1.1)
+
+    canvas.draw()
 
 
 # Function to draw value on a square
