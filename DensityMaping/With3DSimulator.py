@@ -130,18 +130,6 @@ def on_put_values_on_grid_button_click():
         canvas.draw()
 
 
-''''# Function to draw a value on the grid
-def draw_value_on_grid(value, row, column):
-    # Calculate the center of the grid square
-    center_x = (column - 0.5) * float(square_size_entry.get())
-    center_y = (row - 0.5) * float(square_size_entry.get())
-
-    # Draw the value on the grid
-    plt.text(center_x, center_y, str(value), ha='center', va='center', color='black', fontweight='bold')
-    on_draw_button_click.canvas.draw()
-'''
-
-
 def draw_grid_with_circles(square_size, grid_size, circles, ax):
     # Draw grid of squares
     for i in range(grid_size):
