@@ -9,7 +9,7 @@ from Square import Square
 BestLocationInfo Class: class that holds all the information of the best location for a business
 parameters:
 best_location_center : holds the Point that is the center of the best location for the business
-best_profit : holds the best profit found for the business
+best_income_found : holds the best profit found for the business
 affected_squares_list : [list] that holds all the squares that affected in the location that found
 functions:
 print_location_squares_info: print all the square's information in the area
@@ -19,17 +19,21 @@ print_location_squares_info: print all the square's information in the area
 
 # class that holds the info about the best area for business location
 class BestLocationInfo:
-    def __init__(self, best_location_center: Point, best_profit: float, affected_squares_list: list):
+    def __init__(self, best_location_center: Point, best_income_found: float, affected_squares_list: list[Square]):
         self.best_location_center = best_location_center
-        self.best_profit = best_profit
+        self.best_income_found = best_income_found
         self.affected_squares_list = affected_squares_list
 
-    def print_location_squares_info(self):
+    def print_location_info(self):
+        print("Best Location Center:", end=" ")
+        self.best_location_center.print_point()
+        print("Best Income Found " + str(self.best_income_found))
         for square in self.affected_squares_list:
             print(square.get_square_info())
 
 
 """
+# should be changed by Attraction and repulsion between businesses
 ------------------------------------------------- MapGrid -------------------------------------------------
 MapGrid Class: represents the Grid that maps the physical and economic space. consists of Squares.
 parameters:
@@ -53,13 +57,19 @@ gauss_value : calculate the value of the gauss distribution at a certain distanc
 
 
 class MapGrid:
-    def __init__(self, x_axis_len, y_axis_len, grid_square_len, grid_squares_values):
+    def __init__(self, x_axis_len: float, y_axis_len: float, grid_square_len: float, grid_squares_values: list[list]):
         self.grid_square_len = grid_square_len
         self.x_axis_len = x_axis_len
         self.y_axis_len = y_axis_len
         # 2D list (a list of lists) called self.grid, Initializing each element of the grid with a new Square object
         self.grid = [[Square(grid_square_len, i, j, grid_squares_values[i][j]) for j in range(x_axis_len)] for i in
                      range(y_axis_len)]
+
+    def print_grid_values(self):
+        print("\n------------The Map Grid that created:------------")
+        for row in self.grid:
+            print(' '.join(map(lambda x: str(x) if x % 1 != 0 else str(int(x)), [square.value for square in row])))
+        print("--------------------------------------------------\n")
 
     def calc_2_squares_dist(self, square1: Square, square2: Square):
         return self.calc_2_points_dist(square1.calc_square_center(), square2.calc_square_center())
@@ -70,7 +80,11 @@ class MapGrid:
     def find_size_ratio(self, business: Business):
         return int(math.floor(business.circle_to_square() / self.grid_square_len))
 
-    # function that calculates the best location for new business and return BestLocation object member
+    """
+    -------------------------------------------------------------------------------------------------
+     function that calculates the best location for new business and return BestLocation object member
+    -------------------------------------------------------------------------------------------------
+    """
     def find_best_location(self, new_business: Business):
         cord_x, cord_y = 0, 0
         max_sum = 0
@@ -78,34 +92,41 @@ class MapGrid:
         init_center = new_business.find_init_center(business_size_ratio)
         scanned_squares_list = []
         best_location_area = []
+
         for row in range(0, self.y_axis_len):
             for col in range(0, self.x_axis_len):
                 temp_sum, scanned_squares_list = self.calc_square_sum(business_size_ratio, row, col, init_center, new_business.get_varience(), scanned_squares_list)
-                if temp_sum >= max_sum:  # if the new sum is better then the previous max
+                if temp_sum >= max_sum:  # if the new sum is better than the previous max
                     max_sum = temp_sum
                     # update the best area center found
                     cord_x = (col * self.grid_square_len) + ((business_size_ratio / 2) * self.grid_square_len) - self.grid_square_len + 1
                     cord_y = (row * self.grid_square_len) + ((business_size_ratio / 2) * self.grid_square_len) - self.grid_square_len + 1
+
                     # clear the squares list of the previous best area
                     best_location_area.clear()
                     # append new squares list of the new best area
                     best_location_area.extend(scanned_squares_list[:])
+
                 # update the x_index of the scanning center point
                 init_center.set_x(init_center.get_x() + self.grid_square_len)
-        # update the y_index of the scanning center point
-        init_center.set_y(init_center.get_y() + self.grid_square_len)
-        # Clear the scanned squares list after the loop
-        scanned_squares_list.clear()
+            # update the y_index of the scanning center point
+            init_center.set_y(init_center.get_y() + self.grid_square_len)
+            # Clear the scanned squares list after the loop
+            scanned_squares_list.clear()
 
-        best_center_found = Point(cord_x , cord_y )
+        best_center_found = Point(cord_x, cord_y )
         best_area_info = BestLocationInfo(best_center_found, max_sum, best_location_area)
         # set the location of the new business (center point)
         new_business.set_center(best_center_found)
         # return BestLocationInfo object that stores all the data
         return best_area_info
 
-    # function for claculating sum of sub area inside of the grid returns the profit calculated (square_sum)
-    # and list of the scanned squares
+    '''
+    -------------------------------------------------------------------------------------------------
+    function for claculating sum of sub area inside the grid returns the profit calculated (square_sum)
+     and list of the scanned squares
+    -------------------------------------------------------------------------------------------------
+    '''
     def calc_square_sum(self, size_ratio: int, i: int, j: int, midpoint: Point, var: float, squares_list: list):
         square_sum = 0
         squares_list.clear()
@@ -126,8 +147,26 @@ class MapGrid:
     def gauss_value(self, x, var):
         return (1 / (2 * 3.14159 * var) ** 0.5) * (2.71828 ** (-1 * (x ** 2) / (2 * var ** 2)))
 
-    def put_business_on_grid(self,location_placement: BestLocationInfo):
-        pass
+    def put_business_on_grid(self, business: Business, placement: BestLocationInfo):
+        # initialize best found incove value to business
+        business.found_income = placement.best_income_found
+
+        # update affected by the business squares values (should be changed by correlation to businesses affectivness):
+        # ------------------------------------------------------------------------------------------------------------
+        # varible for checking that the effectivness distribution in the area is correct
+        income_dist_check = business.found_income
+        for affected_square in placement.affected_squares_list:
+            affected_square.value -= business.found_income * self.gauss_value(
+                        self.calc_2_points_dist(placement.best_location_center, affected_square.square_center_point),
+                        business.get_varience())
+            income_dist_check -= affected_square.value
+        if income_dist_check != 0:
+            print("The affected are squares have not been modified correctly! please check!")
+
+
+
+        # ------------------------> Continue Here <------------------------
+
 
 
 def main():
@@ -139,7 +178,7 @@ def main():
                            [5.0, 13.0, 14.0, 8.0],
                            [9.0, 15.0, 16.0, 12.0],
                            [6.0, 7.0, 10.0, 11.0]]'''
-    grid_squares_values2 = [[1.0, 2.0, 3.0, 4.0],
+    grid_squares_values2 = [[100.0, 2.0, 3.0, 4.0],
                            [5.0, 13.0, 13.0, 18.0],
                            [9.0, 15.0, 9.0, 30.0],
                            [6.0, 7.0, 10.0, 11.0]]
@@ -163,7 +202,7 @@ def main():
    '''
     # Create an instance of MapGrid
     map_grid = MapGrid(x_axis_len, y_axis_len, scaled_square_len, grid_squares_values2)
-
+    map_grid.print_grid_values()
     # Example business data
     business_radius = 1.0
     business_center = Point(0.0, 0.0)
@@ -173,9 +212,7 @@ def main():
     best_location_info = map_grid.find_best_location(new_business)
 
     # Print the results
-    print("Best Location Center:" + "(", best_location_info.best_location_center.get_x(),",",best_location_info.best_location_center.get_y(), ")")
-    print("Best Profit:", best_location_info.best_profit)
-    best_location_info.print_location_squares_info()
+    best_location_info.print_location_info()
 
 
 # run Tests

@@ -13,6 +13,7 @@ circle_to_square :  return length of edge of the circle's equivalent square, edg
 ------------------------------------------------------------------------------------------------
 """
 
+
 class Circle:
     def __init__(self, radius: float, center: Point):
         self.radius = radius
@@ -36,8 +37,10 @@ class Circle:
     # functions
 
     # square inside circle
-    # def circle_to_square(self, radius):   # return length of edge of the equivalent square
-    #     return float(math.sqrt(2) * radius)
+    '''
+    def circle_to_square(self, radius):   # return length of edge of the equivalent square
+        return float(math.sqrt(2) * radius)
+    '''
 
     # return length of edge of the equivalent square
     def circle_to_square(self):
