@@ -41,8 +41,8 @@ class Business(Circle):
     def get_business_id(self):
         return self.business_id
 
-    def get_req_profit(self):
-        return self.req_profit
+    def get_req_income(self):
+        return self.req_income
 
     def get_business_type(self):
         return self.business_type
@@ -54,8 +54,8 @@ class Business(Circle):
     def set_business_id(self, b_id: int):
         self.business_id = b_id
 
-    def set_req_income(self, profit: int):
-        self.req_income = profit
+    def set_req_income(self, income: int):
+        self.req_income = income
 
     def set_business_type(self, business_type: BusinessType):
         self.business_type = business_type

@@ -1,6 +1,6 @@
 
 import math
-
+import numpy as np
 from Business import BusinessType
 from Point import Point
 
@@ -64,16 +64,16 @@ class Square:
     def set_column(self, col: int):
         self.square_index_column = col
 
-    # functions
     def square_center_point(self):
         square_center = Point(
-            self.square_len * self.square_index_column - (self.square_len / 2),
-            self.square_len * self.square_index_row - (self.square_len / 2)
-        )
+            self.square_len * (self.square_index_column + 1) - (self.square_len / 2),
+            self.square_len * (self.square_index_row + 1) - (self.square_len / 2))
         return square_center
 
     def calc_diagonal(self):
         return math.sqrt(2) * self.square_len
 
     def get_square_info(self):
-        return f"Square at grid index ({self.square_index_row}, {self.square_index_column}) with value {self.value}"
+        # return f"Square at grid index ({self.square_index_row}, {self.square_index_column}) with value {self.value}"
+        print(f"Square at grid index ({self.square_index_column}, {self.square_index_row}) with value {self.value} with center point:")
+        self.square_center_point().print_point()
