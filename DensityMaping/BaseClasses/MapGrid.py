@@ -3,6 +3,7 @@ import numpy as np
 from Business import Business
 from Point import Point
 from Square import Square
+import cProfile
 
 """
 ------------------------------------------------- BestLocationInfo -------------------------------------------------
@@ -80,7 +81,7 @@ class MapGrid:
     def find_size_ratio(self, business: Business):
         return int(math.floor(business.circle_to_square() / self.grid_square_len))
 
-    def find_best_location(self, new_business: Business):
+    def find_best_location(self, new_business: Business) -> BestLocationInfo:
         '''
          function that calculates the best location for new business and return BestLocation object member
         '''
@@ -107,17 +108,54 @@ class MapGrid:
 
                 # update the x_index of the scanning center point
                 init_center.set_x(init_center.get_x() + self.grid_square_len)
+                # Clear the scanned squares list each iteration
+                scanned_squares_list.clear()
             # update the y_index of the scanning center point
             init_center.set_y(init_center.get_y() + self.grid_square_len)
             # Clear the scanned squares list after the loop
-            scanned_squares_list.clear()
+            # scanned_squares_list.clear()
 
-        best_center_found = Point(cord_x, cord_y )
+        best_center_found = Point(cord_x, cord_y)
         best_area_info = BestLocationInfo(best_center_found, max_sum, best_location_area)
-        # set the location of the new business (center point)
-        new_business.set_center(best_center_found)
         # return BestLocationInfo object that stores all the data
         return best_area_info
+
+    def find_locations(self, new_business: Business) -> list[BestLocationInfo]:
+        business_size_ratio = self.find_size_ratio(new_business)
+        init_center = new_business.find_init_center(business_size_ratio)
+        scanned_squares_list = []
+        location_area = []
+        appropriate_locations = []
+        for row in range(0, self.y_axis_len):
+            for col in range(0, self.x_axis_len):
+                temp_sum, scanned_squares_list = self.calc_square_sum(business_size_ratio, row, col, init_center,
+                                                                      new_business.get_varience(), scanned_squares_list)
+                if temp_sum >= new_business.get_req_income():  # if the calculated sum is better than the req income
+                    # update the best area center found
+                    cord_x = (col * self.grid_square_len) + (
+                                (business_size_ratio / 2) * self.grid_square_len) - self.grid_square_len + 1
+                    cord_y = (row * self.grid_square_len) + (
+                                (business_size_ratio / 2) * self.grid_square_len) - self.grid_square_len + 1
+
+                    # clear the squares list of the previous best area
+                    location_area.clear()
+                    # append new squares list of the new best area
+                    location_area.extend(scanned_squares_list[:])
+                    area_info = BestLocationInfo(Point(cord_x, cord_y), temp_sum, location_area)
+                    appropriate_locations.append(area_info)
+                    # return BestLocationInfo object that stores all the data
+                # update the x_index of the scanning center point
+                init_center.set_x(init_center.get_x() + self.grid_square_len)
+                # Clear the scanned squares list each iteration
+                scanned_squares_list.clear()
+            # update the y_index of the scanning center point
+            init_center.set_y(init_center.get_y() + self.grid_square_len)
+
+        return appropriate_locations
+
+    def print_all_found_locations_info(self, found_locations: list[BestLocationInfo]):
+        for location in found_locations:
+            location.print_location_info()
 
     def calc_square_sum(self, size_ratio: int, i: int, j: int, midpoint: Point, var: float, squares_list: list):
         '''
@@ -149,6 +187,8 @@ class MapGrid:
         initialize best found income value to business and
         update affected by the business squares values (should be changed by correlation to businesses affectivness)
         '''
+        # set the location of the new business (center point)
+        business.set_center(placement.best_location_center)
         business.found_income = placement.best_income_found
         # varible for checking that the effectivness distribution in the area is correct
         income_dist_check = business.found_income
@@ -186,7 +226,7 @@ def main():
                            [6.0, 7.0, 10.0, 11.0]]'''
     grid_squares_values2 = [[100.0, 2.0, 3.0, 4.0],
                            [5.0, 13.0, 13.0, 18.0],
-                           [9.0, 15.0, 30.0, 30.0],
+                           [9.0, 15.0, 60.0, 30.0],
                            [6.0, 7.0, 10.0, 11.0]]
 
     '''   grid_squares_values2 = [[100.0, 2.0, 3.0, 4.0],
@@ -209,13 +249,30 @@ def main():
     business_radius = 1
     business_center = Point(0.0, 0.0)
     new_business = Business(business_radius, business_center, 1, 50.0, 2, 3)
+    new_business2 = Business(business_radius, business_center, 1, 110.0, 2, 3)
 
     # Find the best location for the new business
     best_location_info = map_grid.find_best_location(new_business)
 
     # Print the results
     best_location_info.print_location_info()
-    map_grid.put_business_on_grid(new_business,best_location_info)
+    map_grid.put_business_on_grid(new_business, best_location_info)
     map_grid.print_grid_values()
+
+
+    # Find 2nd the best location for the new business
+    #best_location_info = map_grid.find_best_location(new_business)
+
+    # Print the results
+    best_location_info.print_location_info()
+    map_grid.put_business_on_grid(new_business, best_location_info)
+    map_grid.print_grid_values()
+
+    best_locations = map_grid.find_locations(new_business2)
+    map_grid.print_all_found_locations_info(best_locations)
+    map_grid.put_business_on_grid(new_business2, best_locations[0])
+    map_grid.print_grid_values()
+
 # run Tests
 main()
+# cProfile.run('main()')
