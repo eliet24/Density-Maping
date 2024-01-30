@@ -77,3 +77,16 @@ class Square:
         # return f"Square at grid index ({self.square_index_row}, {self.square_index_column}) with value {self.value}"
         print(f"Square at grid index ({self.square_index_column}, {self.square_index_row}) with value {self.value} with center point:")
         self.square_center_point().print_point()
+
+    # For simulation
+    def plot_square(self):
+        """
+        Plot a text-based representation of the square.
+        """
+        print(f"Square at grid index ({self.square_index_column}, {self.square_index_row}) with value {self.value}:")
+
+        for i in range(int(self.square_len)):
+            row_values = []
+            for j in range(int(self.square_len)):
+                row_values.append(str(self.value))
+            print(" ".join(row_values))

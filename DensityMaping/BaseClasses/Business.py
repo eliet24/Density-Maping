@@ -2,6 +2,8 @@
 from enum import Enum
 import math
 
+from matplotlib import pyplot as plt
+
 from Circle import Circle
 from Point import Point
 
@@ -76,5 +78,30 @@ class Business(Circle):
         return Point(size_ratio / 2 * self.circle_to_square(), size_ratio / 2 * self.circle_to_square())
 
 
+    # For Business
+    def plot_business(self):
+        """
+        Plot a graphical representation of the business.
+        """
+        center = self.get_center()
+        radius = self.get_radius()
+
+        # Create a circle representing the business
+        circle = plt.Circle((center.get_x(), center.get_y()), radius, color='blue', fill=False)
+
+        # Create a plot
+        fig, ax = plt.subplots()
+        ax.add_artist(circle)
+
+        # Set axis limits based on business size
+        ax.set_xlim(center.get_x() - radius, center.get_x() + radius)
+        ax.set_ylim(center.get_y() - radius, center.get_y() + radius)
+
+        # Display the plot
+        plt.title(f"Business ID: {self.get_business_id()}")
+        plt.xlabel("X-axis")
+        plt.ylabel("Y-axis")
+        plt.grid(True)
+        plt.show()
 
 
