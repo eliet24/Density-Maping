@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Display Grid on Google Maps</title>
+    style>
+        /* Specify a height for the map container */
+        #map {
+            height: 100%;
+        }
+        /* Specify a height for the map container, which can be resized */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Replace YOUR_API_KEY with your actual Google Maps API key -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDl2OT19dYvcg7Y6osk0i3K2ADLQHFGVNI"></script>
+    <script>
+        // Sample grid data (replace with your actual data)
+        var grid_squares_values3 = [
+            { lat: 40.7128, lng: -74.0060, value: 50 }, // Example grid square
+            // Add more grid squares as needed
+        ];
+
+        function initMap() {
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 10, // Adjust zoom level as needed
+                center: { lat: 40.7128, lng: -74.0060 }, // Adjust center coordinates as needed
+                mapTypeId: google.maps.MapTypeId.ROADMAP // Set map type
+            });
+
+            // Add grid squares to the map
+            gridData.forEach(function(square) {
+                var marker = new google.maps.Marker({
+                    position: { lat: square.lat, lng: square.lng },
+                    map: map,
+                    title: 'Value: ' + square.value.toFixed(1) // Tooltip content
+                });
+
+                // Example of customizing marker icon (optional)
+                // marker.setIcon('http://maps.google.com/mapfiles/ms/icons/blue-dot.png');
+            });
+
+            // Example of adding a grid square as a polygon (optional)
+            var polygonCoords = [
+                { lat: 40.7128, lng: -74.0060 },
+                { lat: 40.7128, lng: -74.0050 },
+                { lat: 40.7138, lng: -74.0050 },
+                { lat: 40.7138, lng: -74.0060 },
+                { lat: 40.7128, lng: -74.0060 }
+            ];
+
+            var gridPolygon = new google.maps.Polygon({
+                paths: polygonCoords,
+                strokeColor: '#FF0000',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#FF0000',
+                fillOpacity: 0.35,
+                map: map
+            });
+        }
+    </script>
+    <!-- Specify a height for the map container -->
+    <div id="map" style="height: 600px;"></div> <!-- Adjust height as needed -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDl2OT19dYvcg7Y6osk0i3K2ADLQHFGVNI&callback=initMap"></script>
+</body>
+</html>

@@ -1,7 +1,6 @@
-
 import math
-import numpy as np
-from Business import BusinessType
+from typing import Optional, Dict, TYPE_CHECKING
+from BusinessType import BusinessType
 from Point import Point
 
 """
@@ -24,7 +23,13 @@ get_square_info: returns the square's info as a string -> [string]
 
 
 class Square:
-    def __init__(self, square_len: float, square_index_row: int, square_index_column: int, value: float):
+    def __init__(self, square_len: float, square_index_row: int, square_index_column: int, value: float,
+                 square_value_dist: Optional[Dict[BusinessType, float]] = None):
+        if square_value_dist is None:
+            self.square_value_dist = {BusinessType.FOOD: value, BusinessType.FASHION: value,
+                                      BusinessType.HEALTH_AND_COSMETICS: value, BusinessType.ELECTRONICS: value}
+        else:
+            self.value_dist = square_value_dist
         self.square_len = square_len
         self.square_index_row = square_index_row
         self.square_index_column = square_index_column
@@ -75,7 +80,8 @@ class Square:
 
     def get_square_info(self):
         # return f"Square at grid index ({self.square_index_row}, {self.square_index_column}) with value {self.value}"
-        print(f"Square at grid index ({self.square_index_column}, {self.square_index_row}) with value {self.value} with center point:")
+        print(
+            f"Square at grid index ({self.square_index_column}, {self.square_index_row}) with value {self.value} with center point:")
         self.square_center_point().print_point()
 
     # For simulation

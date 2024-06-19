@@ -1,10 +1,11 @@
 
 from enum import Enum
 import math
-
+from typing import Dict, Optional
 from matplotlib import pyplot as plt
-
 from Circle import Circle
+from BusinessType import BusinessType
+from Square import Square
 from Point import Point
 
 """
@@ -23,21 +24,17 @@ find_init_center : returns the Business initialized center point by the business
 """
 
 
-class BusinessType(Enum):
-    FASHION = 1
-    FOOD = 2
-    HEALTH_AND_COSMETICS = 3
-    ELECTRONICS = 4
-
-
 class Business(Circle):
-    def __init__(self, radius: float, center: Point, business_id: int, req_income : float, business_type: BusinessType, varience: float):
+    def __init__(self, radius: float, center: Point, business_id: int, req_income: float, business_type: BusinessType,
+                 business_var: float, found_income: float = 0, business_squares_value_dist: Optional[Dict[Square, float]] = None):
         super().__init__(radius, center)
         self.business_id = business_id
         self.req_income = req_income
         self.business_type = business_type
-        self.varience = varience
-        self.found_income = 0
+        self.business_type = business_type
+        self.business_var = business_var
+        self.found_income = found_income
+        self.business_squares_value_dist = business_squares_value_dist
 
     # getters
     def get_business_id(self):
@@ -50,7 +47,7 @@ class Business(Circle):
         return self.business_type
 
     def get_varience(self):
-        return self.varience
+        return self.business_var
 
     # setters
     def set_business_id(self, b_id: int):
@@ -63,22 +60,12 @@ class Business(Circle):
         self.business_type = business_type
 
     def set_varience(self, var: float):
-        self.varience = var
+        self.business_var = var
 
-    # functions
-
-    # function for finding size ratio between business size and square grid size
-    '''def find_size_ratio(self, map_grid):
-        grid_square_length = len(map_grid[0][0])
-        squared_business_len = self.circle_to_square()
-        return int(math.floor(squared_business_len / grid_square_length))
-    '''
     # function for finding the initialized business center on the MapGrid
     def find_init_center(self, size_ratio: int):
         return Point(size_ratio / 2 * self.circle_to_square(), size_ratio / 2 * self.circle_to_square())
 
-
-    # For Business
     def plot_business(self):
         """
         Plot a graphical representation of the business.

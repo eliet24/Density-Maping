@@ -1,5 +1,6 @@
 import math
 import numpy as np
+
 from Business import Business
 from Point import Point
 from Square import Square
@@ -216,7 +217,8 @@ class MapGrid:
             print(income_dist_check)
 
     # Visualization function inside MapGrid class
-    def visualize_grid(self, businesses: list[Business]):
+    '''
+    def visualize_grid(self):
         fig, ax = plt.subplots()
 
         # Draw grid squares
@@ -229,6 +231,51 @@ class MapGrid:
                 ax.text(square.square_index_column + 0.5, square.square_index_row + 0.5,
                         f"{square.value:.1f}", ha='center', va='center')
 
+        ax.set_xlim(0, self.x_axis_len)
+        ax.set_ylim(0, self.y_axis_len)
+        ax.set_aspect('equal', 'box')
+        plt.gca().invert_yaxis()  # Invert y_axis to match the grid layout
+
+        return fig, ax
+
+    def visualize_bizns_on_grid(self, fig, ax, businesses: list[Business]):
+        # Draw businesses as circles
+        for business in businesses:
+            circle = patches.Circle((business.circle_center.get_x(), business.circle_center.get_y()),
+                                    business.radius, linewidth=1, edgecolor='red', facecolor='none')
+            ax.add_patch(circle)
+            ax.text(business.circle_center.get_x(), business.circle_center.get_y(),
+                   f"B{business.business_id}", ha='center', va='center', color='red')
+
+        ax.figure.canvas.draw()  # Redraw the canvas to update with new elements
+    '''
+
+    def visualize_grid(self, ax):
+        # Clear the existing grid
+        ax.clear()
+
+        # Draw grid squares
+        for row in self.grid:
+            for square in row:
+                square_rect = patches.Rectangle((square.square_index_column, square.square_index_row),
+                                                self.grid_square_len, self.grid_square_len,
+                                                linewidth=1, edgecolor='black', facecolor='none')
+                ax.add_patch(square_rect)
+                ax.text(square.square_index_column * self.grid_square_len + 0.5 * self.grid_square_len, square.square_index_row * self.grid_square_len + 0.5 * self.grid_square_len,
+                        f"{square.value:.1f}", ha='center', va='center', fontsize=6)
+
+        # Set plot limits and aspect ratio
+        ax.set_xlim(0, self.x_axis_len * self.grid_square_len)
+        ax.set_ylim(0, self.y_axis_len * self.grid_square_len)
+        ax.set_aspect('equal', 'box')
+        ax.invert_yaxis()  # Invert y axis to match the grid layout
+
+        # Configure ticks and grid lines
+        ax.set_xticks(np.arange(0, (self.x_axis_len + 1) * self.grid_square_len, self.grid_square_len))
+        ax.set_yticks(np.arange(0, (self.y_axis_len + 1) * self.grid_square_len, self.grid_square_len))
+        ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+
+    def visualize_bizns_on_grid(self, ax, businesses: list):
         # Draw businesses as circles
         for business in businesses:
             circle = patches.Circle((business.circle_center.get_x(), business.circle_center.get_y()),
@@ -237,12 +284,8 @@ class MapGrid:
             ax.text(business.circle_center.get_x(), business.circle_center.get_y(),
                     f"B{business.business_id}", ha='center', va='center', color='red')
 
-        ax.set_xlim(0, self.x_axis_len)
-        ax.set_ylim(0, self.y_axis_len)
-        ax.set_aspect('equal', 'box')
-        plt.gca().invert_yaxis()  # Invert y axis to match the grid layout
-        plt.show()
+        ax.figure.canvas.draw()  # Redraw the canvas to update with new elements
 
-        # ------------------------> Continue Here <------------------------
+    # ------------------------> Continue Here <------------------------
 
 

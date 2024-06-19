@@ -1,3 +1,4 @@
+
 """
 ------------------- Point ----------------
 Point Class: represents a point on the grid
