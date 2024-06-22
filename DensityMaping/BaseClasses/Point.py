@@ -1,4 +1,4 @@
-
+from pydantic import BaseModel
 """
 ------------------- Point ----------------
 Point Class: represents a point on the grid
@@ -13,10 +13,9 @@ print_pint  :  print the point indices on the axis in the format: (_x_,_y_)
 """
 
 
-class Point:
-    def __init__(self, x: float, y: float):
-        self.x = x
-        self.y = y
+class Point(BaseModel):
+    x: float
+    y: float
 
     # getters
     def get_x(self):

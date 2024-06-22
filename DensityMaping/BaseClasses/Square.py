@@ -2,7 +2,7 @@ import math
 from typing import Optional, Dict, TYPE_CHECKING
 from BusinessType import BusinessType
 from Point import Point
-
+from pydantic import BaseModel, Field
 """
 ------------------------------------------ Square ----------------------------------------------
 Square Class: represents a Square that is the building block of the Grid
@@ -22,24 +22,23 @@ get_square_info: returns the square's info as a string -> [string]
 """
 
 
-class Square:
-    def __init__(self, square_len: float, square_index_row: int, square_index_column: int, value: float,
-                 square_value_dist: Optional[Dict[BusinessType, float]] = None):
-        if square_value_dist is None:
-            self.square_value_dist = {BusinessType.FOOD: value, BusinessType.FASHION: value,
-                                      BusinessType.HEALTH_AND_COSMETICS: value, BusinessType.ELECTRONICS: value}
-        else:
-            self.value_dist = square_value_dist
-        self.square_len = square_len
-        self.square_index_row = square_index_row
-        self.square_index_column = square_index_column
-        self.value = value
-        self.business_on_square = {
-            BusinessType.FOOD: 0,
-            BusinessType.FASHION: 0,
-            BusinessType.HEALTH_AND_COSMETICS: 0,
-            BusinessType.ELECTRONICS: 0
-        }
+class Square(BaseModel):
+    square_len: float
+    square_index_row: int
+    square_index_column: int
+    value: float
+    square_value_dist: Dict[BusinessType, float] = Field(default_factory=lambda: {
+        BusinessType.FOOD: 0.0,
+        BusinessType.FASHION: 0.0,
+        BusinessType.HEALTH_AND_COSMETICS: 0.0,
+        BusinessType.ELECTRONICS: 0.0
+    })
+    business_on_square: Dict[BusinessType, int] = Field(default_factory=lambda: {
+        BusinessType.FOOD: 0,
+        BusinessType.FASHION: 0,
+        BusinessType.HEALTH_AND_COSMETICS: 0,
+        BusinessType.ELECTRONICS: 0
+    })
 
     # getters & setters
     def get_length(self):
@@ -71,8 +70,8 @@ class Square:
 
     def square_center_point(self):
         square_center = Point(
-            self.square_len * (self.square_index_column + 1) - (self.square_len / 2),
-            self.square_len * (self.square_index_row + 1) - (self.square_len / 2))
+            x=self.square_len * (self.square_index_column + 1) - (self.square_len / 2),
+            y=self.square_len * (self.square_index_row + 1) - (self.square_len / 2))
         return square_center
 
     def calc_diagonal(self):

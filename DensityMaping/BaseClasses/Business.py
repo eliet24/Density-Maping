@@ -1,12 +1,11 @@
 
-from enum import Enum
-import math
 from typing import Dict, Optional
 from matplotlib import pyplot as plt
 from Circle import Circle
 from BusinessType import BusinessType
 from Square import Square
 from Point import Point
+from pydantic import BaseModel
 
 """
 ------------------------------------------------- Business -------------------------------------------------
@@ -24,19 +23,32 @@ find_init_center : returns the Business initialized center point by the business
 """
 
 
-class Business(Circle):
-    def __init__(self, radius: float, center: Point, business_id: int, req_income: float, business_type: BusinessType,
-                 business_var: float, found_income: float = 0, business_squares_value_dist: Optional[Dict[Square, float]] = None):
-        super().__init__(radius, center)
-        self.business_id = business_id
-        self.req_income = req_income
-        self.business_type = business_type
-        self.business_type = business_type
-        self.business_var = business_var
-        self.found_income = found_income
-        self.business_squares_value_dist = business_squares_value_dist
 
-    # getters
+class Business(Circle):
+    business_id: int
+    req_income: float
+    business_type: BusinessType
+    business_var: float
+    found_income: float = 0.0
+    business_squares_value_dist: Optional[Dict[Square, float]] = None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, radius: float, circle_center: Point, business_id: int, req_income: float,
+                 business_type: BusinessType, business_var: float,
+                 found_income: float = 0.0, business_squares_value_dist: Optional[Dict[Square, float]] = None):
+        super().__init__(
+            radius=radius,
+            circle_center=circle_center,
+            business_id=business_id,
+            req_income=req_income,
+            business_type=business_type,
+            business_var=business_var,
+            found_income=found_income,
+            business_squares_value_dist=business_squares_value_dist
+        )
+    # getters and Setters
     def get_business_id(self):
         return self.business_id
 
@@ -64,7 +76,7 @@ class Business(Circle):
 
     # function for finding the initialized business center on the MapGrid
     def find_init_center(self, size_ratio: int):
-        return Point(size_ratio / 2 * self.circle_to_square(), size_ratio / 2 * self.circle_to_square())
+        return Point(x = size_ratio / 2 * self.circle_to_square(), y = size_ratio / 2 * self.circle_to_square())
 
     def plot_business(self):
         """
