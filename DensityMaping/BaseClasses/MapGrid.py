@@ -1,9 +1,10 @@
 import math
 from typing import List
-
+from enum import Enum
 import numpy as np
 
 from Business import Business
+from BusinessType import BusinessType
 from Point import Point
 from Square import Square
 import cProfile
@@ -107,7 +108,9 @@ class MapGrid(BaseModel):
 
         for row in range(0, self.y_axis_len):
             for col in range(0, self.x_axis_len):
-                temp_sum, scanned_squares_list = self.calc_square_sum(business_size_ratio, row, col, init_center, new_business.get_varience(), scanned_squares_list)
+                temp_sum, scanned_squares_list = self.calc_square_sum(business_size_ratio, row, col, init_center,
+                                                                      new_business.get_varience(), scanned_squares_list,
+                                                                      )
                 if temp_sum >= max_sum:  # if the new sum is better than the previous max
                     max_sum = temp_sum
 
@@ -147,7 +150,7 @@ class MapGrid(BaseModel):
         for row in range(0, self.y_axis_len):
             for col in range(0, self.x_axis_len):
                 temp_sum, scanned_squares_list = self.calc_square_sum(business_size_ratio, row, col, init_center,
-                                                                      new_business.get_varience(), scanned_squares_list)
+                                                                      scanned_squares_list, new_business)
                 if temp_sum >= new_business.get_req_income():  # if the calculated sum is better than the req income
                     # update the best area center found
                     cord_x = ((col * self.grid_square_len) + ((business_size_ratio / 2) * self.grid_square_len) -
@@ -176,9 +179,9 @@ class MapGrid(BaseModel):
         for location in found_locations:
             location.print_location_info()
 
-    def calc_square_sum(self, size_ratio: int, i: int, j: int, midpoint: Point, var: float, squares_list: list):
+    def calc_square_sum(self, size_ratio: int, i: int, j: int, midpoint: Point, squares_list: list, business: Business):
         """
-        for claculating sum of sub area inside the grid returns the profit calculated (square_sum)
+        for calculating sum of sub area inside the grid returns the profit calculated (square_sum)
         and list of the scanned squares
         """
         square_sum = 0
@@ -189,8 +192,9 @@ class MapGrid(BaseModel):
                 small_square_center = Point(x=m * self.grid_square_len - (self.grid_square_len / 2) + size_ratio,
                                             y=k * self.grid_square_len - (self.grid_square_len / 2) + size_ratio)
                 dist_impact = self.calc_2_points_dist(midpoint, small_square_center)
-                # row_sum += self.grid[k][m].get_value() * self.gauss_value(dist_impact, var)    # use For calculation with gauss
-                row_sum += self.grid[k][m].get_value()        # use for calculation without gauss
+                # row_sum += self.grid[k][m].get_value() * self.gauss_value(dist_impact, business.get_varience())   # use For calculation with gauss
+                # row_sum += self.grid[k][m].get_value()                                                            # use for calculation without gauss
+                row_sum += self.grid[k][m].get_value_by_businessType(business_type=business.get_business_type())
                 squares_list.append(self.grid[k][m])
             square_sum += row_sum
         return square_sum, squares_list
@@ -213,6 +217,7 @@ class MapGrid(BaseModel):
         income_dist_check = business.found_income
         print(income_dist_check)
         for affected_square in placement.affected_squares:
+            # TODO: For gauss calculations - should be updated!
             '''
             affected_square.value -= affected_square.get_value() * self.gauss_value(
                         self.calc_2_points_dist(placement.best_location_center, affected_square.square_center_point()),
@@ -221,9 +226,15 @@ class MapGrid(BaseModel):
                         self.calc_2_points_dist(placement.best_location_center, affected_square.square_center_point()),
                         business.get_varience())
             '''
-            income_dist_check -= affected_square.get_value()
-            affected_square.value -= affected_square.get_value()
-
+            # Update the square values according to the businessType
+            affected_square.increment_number_of_businesses(business_type=business.get_business_type())
+            income_dist_check -= affected_square.get_value_by_businessType(business_type=business.get_business_type())
+            # affected_square.set_value(affected_square.get_value() - affected_square.get_value_by_businessType(business_type=business.get_business_type()))
+            affected_square.set_value_by_BusinessType(business_type=business.get_business_type(),
+                                                      value=affected_square.get_value_by_businessType(business_type=business.get_business_type()) -
+                                                            affected_square.get_value_by_businessType(business_type=business.get_business_type()) /
+                                                            affected_square.get_number_of_businesses(business_type=business.get_business_type()))
+            affected_square.set_value(affected_square.get_value() - affected_square.get_value_by_businessType(business_type=business.get_business_type()) / len(BusinessType))
         if income_dist_check != 0:
             print("The affected squares have not been modified correctly! please check!")
             print(income_dist_check)

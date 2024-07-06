@@ -61,15 +61,6 @@ def main_old():
 
 
 
-    ''' 
-    # --------------- For Testing getting list of best locations -----------------
-    best_locations = map_grid.find_locations(new_business2)
-    map_grid.print_all_found_locations_info(best_locations)
-    map_grid.put_business_on_grid(new_business2, best_locations[0])
-    map_grid.print_grid_values()
-    map_grid.visualize_grid([new_business2])
-    '''
-
 
 def main():
     # Example usage
@@ -105,7 +96,7 @@ def main():
             print("No suitable locations found for the business income requirements")
             return
         else:
-            selected_location = max(best_locations_info, key=lambda BestLocationInfo: BestLocationInfo.best_income_found)
+            selected_location = max(best_locations_info, key=lambda BestLocationInfo:BestLocationInfo.best_income_found)
             # Print the results
             # best_location_info.print_location_info()
             selected_location.print_location_info()
@@ -121,14 +112,7 @@ def main():
     plt.tight_layout()
     plt.show()  # Keep the plot open at the end
 
-    ''' 
-    # --------------- For Testing getting list of best locations -----------------
-    best_locations = map_grid.find_locations(new_business2)
-    map_grid.print_all_found_locations_info(best_locations)
-    map_grid.put_business_on_grid(new_business2, best_locations[0])
-    map_grid.print_grid_values()
-    map_grid.visualize_grid([new_business2])
-    '''
+
 
 
 # run Tests
