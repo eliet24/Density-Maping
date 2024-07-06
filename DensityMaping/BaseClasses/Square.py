@@ -12,6 +12,7 @@ square_index_row : the row's index in which the square located on the grid
 square_index_column : the column's index in which the square located on the grid
 value : holds the square's value, the revenue - purchasing power on the square
 Business_on_square : dictionary that maps the number of Businesses of each type that affect the square.
+square_value_dist : dictionary that maps the value of profit taken from the square by each kind of business.
 functions:
 get_length, get_value,get_row, get_business_on_square : getters for each of the Square class varibles
 set_length, set_value, set_row, set_column : setters ffor each of the Square class varibles

@@ -138,6 +138,7 @@ class MapGrid(BaseModel):
         """
         function that calculates the suitable locations for new business and return list of BestLocationinfo objects
         """
+        cord_x, cord_y = 0, 0
         business_size_ratio = self.find_size_ratio(new_business)
         init_center = new_business.find_init_center(business_size_ratio)
         scanned_squares_list = []
@@ -149,16 +150,17 @@ class MapGrid(BaseModel):
                                                                       new_business.get_varience(), scanned_squares_list)
                 if temp_sum >= new_business.get_req_income():  # if the calculated sum is better than the req income
                     # update the best area center found
-                    cord_x = (col * self.grid_square_len) + (
-                                (business_size_ratio / 2) * self.grid_square_len) - self.grid_square_len + 1
-                    cord_y = (row * self.grid_square_len) + (
-                                (business_size_ratio / 2) * self.grid_square_len) - self.grid_square_len + 1
+                    cord_x = ((col * self.grid_square_len) + ((business_size_ratio / 2) * self.grid_square_len) -
+                              self.grid_square_len + 1)
+                    cord_y = ((row * self.grid_square_len) + ((business_size_ratio / 2) * self.grid_square_len) -
+                              self.grid_square_len + 1)
 
                     # clear the squares list of the previous best area
                     location_area.clear()
                     # append new squares list of the new best area
                     location_area.extend(scanned_squares_list[:])
-                    area_info = BestLocationInfo(Point(cord_x, cord_y), temp_sum, location_area)
+                    center_point = Point(x=cord_x, y=cord_y)
+                    area_info = BestLocationInfo(best_location_center=center_point, best_income_found=temp_sum, affected_squares=location_area)
                     suitable_locations.append(area_info)
                     # return BestLocationInfo object that stores all the data
                 # update the x_index of the scanning center point

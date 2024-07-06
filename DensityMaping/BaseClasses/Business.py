@@ -19,6 +19,7 @@ functions:
 get_business_id,  get_req_profit, get_business_type, get_varience : getters for each of the Business class varibles
 set_business_id, set_req_profit, set_business_type, set_varience : setters for each of the Business class varibles
 find_init_center : returns the Business initialized center point by the business size for the location search start
+business_squares_value_dist : dictionary that maps the profit values that the business uses from every affected square.
 -------------------------------------------------------------------------------------------------------------
 """
 
