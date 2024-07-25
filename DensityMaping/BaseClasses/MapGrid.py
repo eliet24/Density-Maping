@@ -93,6 +93,10 @@ class MapGrid(BaseModel):
         return abs(((a.get_y() - b.get_y()) ** 2 + (a.get_x() - b.get_x()) ** 2) ** 0.5)
 
     def find_size_ratio(self, business: Business):
+        """
+        :param business: Business type varible for finding the size ratio for the business radios and the map grid
+        :return: the size ratio of the business as a square to the map grid squares length
+        """
         return int(math.floor(business.circle_to_square() / self.grid_square_len))
 
     def find_best_location(self, new_business: Business) -> BestLocationInfo:
@@ -147,27 +151,26 @@ class MapGrid(BaseModel):
         scanned_squares_list = []
         location_area = []
         suitable_locations = []
+
         for row in range(0, self.y_axis_len):
             for col in range(0, self.x_axis_len):
                 temp_sum, scanned_squares_list = self.calc_square_sum(business_size_ratio, row, col, init_center,
                                                                       scanned_squares_list, new_business)
                 if temp_sum >= new_business.get_req_income():  # if the calculated sum is better than the req income
                     # update the best area center found
+
                     cord_x = ((col * self.grid_square_len) + ((business_size_ratio / 2) * self.grid_square_len) -
                               self.grid_square_len + 1)
                     cord_y = ((row * self.grid_square_len) + ((business_size_ratio / 2) * self.grid_square_len) -
                               self.grid_square_len + 1)
 
-                    # clear the squares list of the previous best area
-                    location_area.clear()
-                    # append new squares list of the new best area
-                    location_area.extend(scanned_squares_list[:])
+                    location_area.clear()   # clear the squares list of the previous best area
+
+                    location_area.extend(scanned_squares_list[:])   # append new squares list of the new best area
                     center_point = Point(x=cord_x, y=cord_y)
                     area_info = BestLocationInfo(best_location_center=center_point, best_income_found=temp_sum, affected_squares=location_area)
                     suitable_locations.append(area_info)
-                    # return BestLocationInfo object that stores all the data
-                # update the x_index of the scanning center point
-                init_center.set_x(init_center.get_x() + self.grid_square_len)
+                init_center.set_x(init_center.get_x() + self.grid_square_len)    # update scanning point's x_index
                 # Clear the scanned squares list each iteration
                 scanned_squares_list.clear()
             # update the y_index of the scanning center point
@@ -239,9 +242,14 @@ class MapGrid(BaseModel):
             print("The affected squares have not been modified correctly! please check!")
             print(income_dist_check)
 
-    # Visualization function inside MapGrid class
+    # Visualization functions inside MapGrid class
 
     def visualize_grid(self, ax):
+        """
+        :param ax: axis for visualization
+        :return: void
+        function for visualization of the map grid
+        """
         # Clear the existing grid
         ax.clear()
 
@@ -267,7 +275,12 @@ class MapGrid(BaseModel):
         ax.grid(True, which='both', linestyle='--', linewidth=0.5)
 
     def visualize_bizns_on_grid(self, ax, businesses: list):
-        # Draw businesses as circles
+        """
+        :param ax: axis for visualization
+        :param businesses: Business type varible to be plotted on the map grid
+        :return: void
+        function for visualization of business (as a circle) on a map grid
+        """
         for business in businesses:
             circle = patches.Circle((business.circle_center.get_x(), business.circle_center.get_y()),
                                     business.radius, linewidth=1, edgecolor='red', facecolor='none')

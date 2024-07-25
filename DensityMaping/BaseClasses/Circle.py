@@ -36,9 +36,10 @@ class Circle(BaseModel):
         self.circle_center.set_x(c.get_x())
         self.circle_center.set_y(c.get_y())
 
-
-    # return length of edge of the equivalent square
     def circle_to_square(self):
+        """
+        :return: the length of edge of the equivalent square
+        """
         return float(2 * self.radius)
 
     # square outside circle

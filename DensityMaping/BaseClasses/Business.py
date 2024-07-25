@@ -49,6 +49,7 @@ class Business(Circle):
             found_income=found_income,
             business_squares_value_dist=business_squares_value_dist
         )
+
     # getters and Setters
     def get_business_id(self):
         return self.business_id
@@ -79,7 +80,7 @@ class Business(Circle):
     def find_init_center(self, size_ratio: int):
         return Point(x = size_ratio / 2 * self.circle_to_square(), y = size_ratio / 2 * self.circle_to_square())
 
-    def plot_business(self):
+    '''def plot_business(self):
         """
         Plot a graphical representation of the business.
         """
@@ -103,5 +104,5 @@ class Business(Circle):
         plt.ylabel("Y-axis")
         plt.grid(True)
         plt.show()
-
+'''
 
