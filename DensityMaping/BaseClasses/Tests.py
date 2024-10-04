@@ -1,8 +1,8 @@
-from Business import Business, BusinessType
-from MapGrid import MapGrid, BestLocationInfo
+from DensityMaping.BaseClasses.Business import Business, BusinessType
+from DensityMaping.BaseClasses.MapGrid import MapGrid, BestLocationInfo
 import numpy as np
 from matplotlib import pyplot as plt
-from Point import Point
+from DensityMaping.BaseClasses.Point import Point
 
 
 def main_old():

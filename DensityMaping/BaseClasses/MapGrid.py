@@ -3,10 +3,10 @@ from typing import List
 from enum import Enum
 import numpy as np
 
-from Business import Business
-from BusinessType import BusinessType
-from Point import Point
-from Square import Square
+from DensityMaping.BaseClasses.Business import Business
+from DensityMaping.BaseClasses.BusinessType import BusinessType
+from DensityMaping.BaseClasses.Point import Point
+from DensityMaping.BaseClasses.Square import Square
 import cProfile
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches

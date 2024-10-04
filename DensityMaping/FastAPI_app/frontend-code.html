@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Area Mapping</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        #areaForm {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .button-group {
+            margin-bottom: 15px;
+        }
+        .button-group button {
+            margin-right: 10px;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+        .button-group button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .checkbox-group {
+            margin-bottom: 15px;
+        }
+        .checkbox-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        #radiusControl {
+            margin-top: 10px;
+            display: none;
+        }
+        #radiusControl label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        #radiusControl input {
+            width: 100%;
+        }
+        #businessData {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        #saveArea {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div id="areaForm">
+        <h3>Area Details</h3>
+
+        <div class="button-group" id="areaTypes">
+            <button data-type="home">Home Area</button>
+            <button data-type="work">Work Area</button>
+            <button data-type="other">Other Area</button>
+        </div>
+
+        <div class="button-group" id="drawingMode">
+            <button data-mode="line" class="active">Draw Lines</button>
+            <button data-mode="circle">Draw Circle</button>
+        </div>
+
+        <div id="radiusControl">
+            <label for="radiusSlider">Circle Radius (meters):</label>
+            <input type="range" id="radiusSlider" min="100" max="2000" step="100" value="500">
+            <span id="radiusValue">500m</span>
+        </div>
+
+        <div class="checkbox-group">
+            <h4>Missing Businesses:</h4>
+            <label>
+                <input type="checkbox" value="Food"> Food
+            </label>
+            <label>
+                <input type="checkbox" value="Fashion"> Fashion
+            </label>
+            <label>
+                <input type="checkbox" value="Health & Cosmetics"> Health & Cosmetics
+            </label>
+            <label>
+                <input type="checkbox" value="Electronics"> Electronics
+            </label>
+        </div>
+
+        <div id="businessDataSection">
+            <h4>Additional Business Information:</h4>
+            <textarea id="businessData" rows="4" placeholder="Enter additional information about the business..."></textarea>
+        </div>
+
+        <button id="saveArea">Save Area</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize map
+        var map = L.map('map').setView([51.505, -0.09], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Variables for drawing
+        let drawingMode = 'line';
+        let currentArea = null;
+        let drawingLayer = null;
+        let tempMarkers = [];
+        let linePoints = [];
+        let isDrawing = false;
+        let currentRadius = 500;
+
+        // UI elements
+        const radiusControl = document.getElementById('radiusControl');
+        const radiusSlider = document.getElementById('radiusSlider');
+        const radiusValue = document.getElementById('radiusValue');
+
+        // UI event listeners
+        document.querySelectorAll('#areaTypes button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('#areaTypes button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('#drawingMode button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('#drawingMode button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                drawingMode = this.dataset.mode;
+                radiusControl.style.display = drawingMode === 'circle' ? 'block' : 'none';
+                resetDrawing();
+            });
+        });
+
+        // Radius control
+        radiusSlider.addEventListener('input', function() {
+            currentRadius = parseInt(this.value);
+            radiusValue.textContent = currentRadius + 'm';
+            if (drawingLayer && drawingMode === 'circle') {
+                drawingLayer.setRadius(currentRadius);
+            }
+        });
+
+        // ESC key handler
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                stopDrawing();
+            }
+        });
+
+        function stopDrawing() {
+            isDrawing = false;
+            if (drawingMode === 'line' && linePoints.length > 1) {
+                // Complete the line if we have at least 2 points
+                if (drawingLayer) {
+                    map.removeLayer(drawingLayer);
+                }
+                drawingLayer = L.polyline(linePoints, {color: 'red'}).addTo(map);
+            }
+        }
+
+        // Map event listeners
+        map.on('click', onMapClick);
+        map.on('mousemove', onMouseMove);
+
+        function onMapClick(e) {
+            if (drawingMode === 'line') {
+                handleLineDraw(e.latlng);
+            } else if (drawingMode === 'circle') {
+                handleCircleDraw(e.latlng);
+            }
+        }
+
+        function onMouseMove(e) {
+            if (drawingMode === 'line' && isDrawing) {
+                updateTempLine(e.latlng);
+            }
+        }
+
+        function handleLineDraw(latlng) {
+            if (!isDrawing) {
+                isDrawing = true;
+                linePoints = [];
+            }
+            linePoints.push(latlng);
+
+            if (drawingLayer) {
+                map.removeLayer(drawingLayer);
+            }
+
+            drawingLayer = L.polyline(linePoints, {color: 'red'}).addTo(map);
+
+            // Add marker for visual feedback
+            let marker = L.marker(latlng).addTo(map);
+            tempMarkers.push(marker);
+        }
+
+        function updateTempLine(latlng) {
+            if (linePoints.length > 0) {
+                let tempLinePoints = [...linePoints, latlng];
+                if (drawingLayer) {
+                    map.removeLayer(drawingLayer);
+                }
+                drawingLayer = L.polyline(tempLinePoints, {color: 'red'}).addTo(map);
+            }
+        }
+
+        function handleCircleDraw(latlng) {
+            resetDrawing();
+            drawingLayer = L.circle(latlng, {
+                color: 'red',
+                fillColor: '#f03',
+                fillOpacity: 0.5,
+                radius: currentRadius
+            }).addTo(map);
+        }
+
+        function resetDrawing() {
+            if (drawingLayer) {
+                map.removeLayer(drawingLayer);
+            }
+            tempMarkers.forEach(marker => map.removeLayer(marker));
+            tempMarkers = [];
+            linePoints = [];
+            drawingLayer = null;
+            isDrawing = false;
+        }
+
+        document.getElementById('saveArea').addEventListener('click', function() {
+            if (!drawingLayer) {
+                alert('Please draw an area first');
+                return;
+            }
+
+            let selectedArea = document.querySelector('#areaTypes button.active');
+            if (!selectedArea) {
+                alert('Please select an area type');
+                return;
+            }
+
+            let missingBusinesses = Array.from(document.querySelectorAll('.checkbox-group input:checked'))
+                .map(checkbox => checkbox.value);
+
+            let businessData = document.getElementById('businessData').value;
+
+            let coordinates, radius;
+            if (drawingMode === 'line') {
+                coordinates = linePoints.map(point => ({lat: point.lat, lng: point.lng}));
+                radius = null;
+            } else {
+                let center = drawingLayer.getLatLng();
+                coordinates = [{lat: center.lat, lng: center.lng}];
+                radius = currentRadius;
+            }
+
+            let areaData = {
+                user_id: 'user123', // Replace with actual user ID
+                area_type: selectedArea.dataset.type,
+                shape_type: drawingMode,
+                coordinates: coordinates,
+                radius: radius,
+                missing_businesses: missingBusinesses,
+                business_data: businessData
+            };
+
+            // Send to backend
+            fetch('/areas/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(areaData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                resetDrawing();
+                // Optionally reset form here
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>

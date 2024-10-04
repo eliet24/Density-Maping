@@ -1,7 +1,7 @@
 import math
 from typing import Optional, Dict, TYPE_CHECKING
-from BusinessType import BusinessType
-from Point import Point
+from DensityMaping.BaseClasses.BusinessType import BusinessType
+from DensityMaping.BaseClasses.Point import Point
 from pydantic import BaseModel, Field
 """
 ------------------------------------------ Square ----------------------------------------------

@@ -1,4 +1,4 @@
-from Point import Point
+from DensityMaping.BaseClasses.Point import Point
 from pydantic import BaseModel
 """
 ------------------------------------------ Circle ----------------------------------------------

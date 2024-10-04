@@ -1,10 +1,10 @@
 
 from typing import Dict, Optional
 from matplotlib import pyplot as plt
-from Circle import Circle
-from BusinessType import BusinessType
-from Square import Square
-from Point import Point
+from DensityMaping.BaseClasses.Circle import Circle
+from DensityMaping.BaseClasses.BusinessType import BusinessType
+from DensityMaping.BaseClasses.Square import Square
+from DensityMaping.BaseClasses.Point import Point
 from pydantic import BaseModel
 
 """
