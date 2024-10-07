@@ -2,9 +2,9 @@ from enum import Enum
 from datetime import date
 from typing import Optional, List
 
-from pydantic import BaseModel
-from DensityMaping.BaseClasses import Business, Point
-from DensityMaping.BaseClasses.Circle import Circle
+from pydantic import BaseModel, SkipValidation
+from .Business import Business, Point
+from .Circle import Circle
 
 
 class RelationshipStatus(str, Enum):
@@ -20,8 +20,11 @@ class User(BaseModel):
     user_birth_date: date
     user_income: float
     user_relationship_status: RelationshipStatus
-    user_businesses: Optional[List[Business]] = []
-    user_saved_locations: Optional[List[Circle]] = []
+    user_businesses: Optional[List[SkipValidation[Business]]] = []
+    user_saved_locations: Optional[List[SkipValidation[Circle]]] = []
+
+    class Config:
+        arbitrary_types_allowed = True
 
     # Getters and Setters
     def get_user_id(self):

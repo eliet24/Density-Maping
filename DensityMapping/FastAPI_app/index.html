@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Area Mapping</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css">
+    <style>
+        #map { height: 400px; width: 100%; }
+        .form-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .form-group { margin: 10px 0; }
+        .button-group button { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div id="userFormSection" class="form-section">
+        <h2>Create New User</h2>
+        <form id="userForm">
+            <div class="form-group">
+                <label for="userId">User ID:</label>
+                <input type="text" id="userId" required>
+            </div>
+            <div class="form-group">
+                <label for="userName">Name:</label>
+                <input type="text" id="userName" required>
+            </div>
+            <div class="form-group">
+                <label for="birthDate">Birth Date:</label>
+                <input type="date" id="birthDate" required>
+            </div>
+            <div class="form-group">
+                <label for="income">Income:</label>
+                <input type="number" id="income" required>
+            </div>
+            <div class="form-group">
+                <label for="relationshipStatus">Relationship Status:</label>
+                <select id="relationshipStatus">
+                    <option value="married">Married</option>
+                    <option value="bachelor">Bachelor</option>
+                    <option value="divorced">Divorced</option>
+                    <option value="in_relationship">In Relationship</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit">Create User</button>
+        </form>
+    </div>
+
+    <div id="areaFormSection" class="form-section">
+        <h2>Area Details</h2>
+        <form id="areaForm">
+            <div class="button-group">
+                <label>Area Type:</label>
+                <button type="button" onclick="setAreaType('HOME')">Home Area</button>
+                <button type="button" onclick="setAreaType('WORK')">Work Area</button>
+                <button type="button" onclick="setAreaType('OTHER')">Other Area</button>
+            </div>
+            <div class="button-group">
+                <label>Drawing Mode:</label>
+                <button type="button" onclick="setDrawingMode('LINE')">Draw Lines</button>
+                <button type="button" onclick="setDrawingMode('CIRCLE')">Draw Circle</button>
+            </div>
+            <div id="radiusControlGroup" class="form-group" style="display: none;">
+                <label for="radius">Circle Radius (meters):</label>
+                <input type="range" id="radius" min="100" max="1000" value="500" step="100">
+                <span id="radiusValue">500m</span>
+            </div>
+            <div class="checkbox-group">
+                <label>Missing Businesses:</label><br>
+                <input type="checkbox" id="food" value="FOOD">
+                <label for="food">Food</label>
+                <input type="checkbox" id="fashion" value="FASHION">
+                <label for="fashion">Fashion</label>
+                <input type="checkbox" id="health" value="HEALTH">
+                <label for="health">Health & Cosmetics</label>
+                <input type="checkbox" id="electronics" value="ELECTRONICS">
+                <label for="electronics">Electronics</label>
+            </div>
+            <div class="form-group">
+                <label for="businessData">Additional Business Information:</label>
+                <textarea id="businessData"></textarea>
+            </div>
+            <button type="submit">Save Area</button>
+        </form>
+    </div>
+
+    <script>
+
+        const BACKEND_URL = 'http://localhost:8000';  // Adjust this if your backend is on a different port
+        let map;
+        let drawnItems;
+        let currentAreaType = '';
+        let currentDrawingMode = '';
+        let currentUser = null;
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([51.505, -0.09], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            drawnItems = new L.FeatureGroup().addTo(map);
+        }
+
+        async function debugUserCreate(userData) {
+            try {
+                const response = await fetch(`${BACKEND_URL}/debug/users/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+                const result = await response.json();
+                console.log('Debug response:', result);
+            } catch (error) {
+                console.error('Debug error:', error);
+            }
+        }
+
+        // Updated user form submission handler
+                document.getElementById('userForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userData = {
+                user_id: document.getElementById('userId').value,
+                user_name: document.getElementById('userName').value,
+                user_birth_date: document.getElementById('birthDate').value,
+                user_income: parseFloat(document.getElementById('income').value),
+                user_relationship_status: document.getElementById('relationshipStatus').value,
+                password: document.getElementById('password').value
+            };
+
+            console.log('Attempting to send user data:', userData);
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/users/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const result = await response.json();
+                console.log('Server response:', result);
+
+                if (response.ok) {
+                    alert('User created successfully!');
+                    await loginUser(userData.user_id, userData.password);
+                } else {
+                    let errorMessage;
+                    if (typeof result.detail === 'object') {
+                        // Handle validation errors that come as objects
+                        errorMessage = JSON.stringify(result.detail, null, 2);
+                    } else {
+                        errorMessage = result.detail || 'Unknown error occurred';
+                    }
+                    console.error('Error details:', result);
+                    alert(`Error creating user:\n${errorMessage}`);
+                }
+            } catch (error) {
+                console.error('Network or parsing error:', error);
+                alert(`Error creating user: ${error.message}`);
+            }
+        });
+
+        async function loginUser(userId, password) {
+            const formData = new FormData();
+            formData.append('username', userId);
+            formData.append('password', password);
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/token`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    currentUser = {
+                        token: result.access_token,
+                        userId: userId
+                    };
+                    alert('Logged in successfully!');
+                }
+            } catch (error) {
+                alert('Error logging in: ' + error.message);
+            }
+        }
+
+        // Handle area form submission
+        document.getElementById('areaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentUser) {
+                alert('Please create a user and login first!');
+                return;
+            }
+
+            const coordinates = Array.from(drawnItems.getLayers()).map(layer => {
+                if (layer instanceof L.Circle) {
+                    return {
+                        lat: layer.getLatLng().lat,
+                        lng: layer.getLatLng().lng
+                    };
+                } else if (layer instanceof L.Polyline) {
+                    return layer.getLatLngs().map(latLng => ({
+                        lat: latLng.lat,
+                        lng: latLng.lng
+                    }));
+                }
+            });
+
+            const missingBusinesses = Array.from(document.querySelectorAll('.checkbox-group input:checked'))
+                .map(checkbox => checkbox.value);
+
+            const areaData = {
+                area_type: currentAreaType,
+                shape_type: currentDrawingMode,
+                coordinates: coordinates,
+                radius: currentDrawingMode === 'CIRCLE' ? parseFloat(document.getElementById('radius').value) : null,
+                missing_businesses: missingBusinesses,
+                business_data: document.getElementById('businessData').value
+            };
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/areas/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentUser.token}`
+                    },
+                    body: JSON.stringify(areaData)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Area saved successfully!');
+                    drawnItems.clearLayers();
+                } else {
+                    alert(`Error: ${result.detail}`);
+                }
+            } catch (error) {
+                alert('Error saving area: ' + error.message);
+            }
+        });
+
+        function setAreaType(type) {
+            currentAreaType = type;
+            Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                btn.style.backgroundColor = btn.textContent.includes(type) ? '#007bff' : '';
+                btn.style.color = btn.textContent.includes(type) ? 'white' : '';
+            });
+        }
+
+        function setDrawingMode(mode) {
+            currentDrawingMode = mode;
+            document.getElementById('radiusControlGroup').style.display = mode === 'CIRCLE' ? 'block' : 'none';
+            Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                if (btn.textContent.includes('Draw')) {
+                    btn.style.backgroundColor = btn.textContent.includes(mode) ? '#007bff' : '';
+                    btn.style.color = btn.textContent.includes(mode) ? 'white' : '';
+                }
+            });
+            drawnItems.clearLayers();
+        }
+
+        document.getElementById('radius').addEventListener('input', function(e) {
+            document.getElementById('radiusValue').textContent = e.target.value + 'm';
+        });
+
+        // Map click handler
+        function onMapClick(e) {
+            if (!currentDrawingMode || !currentAreaType) {
+                alert('Please select an area type and drawing mode first!');
+                return;
+            }
+
+            drawnItems.clearLayers();
+
+            if (currentDrawingMode === 'CIRCLE') {
+                const radius = parseInt(document.getElementById('radius').value);
+                L.circle(e.latlng, {radius: radius}).addTo(drawnItems);
+            } else if (currentDrawingMode === 'LINE') {
+                // For simplicity, just create a small line. In a real app, you'd want proper line drawing.
+                const points = [
+                    e.latlng,
+                    [e.latlng.lat + 0.01, e.latlng.lng + 0.01]
+                ];
+                L.polyline(points).addTo(drawnItems);
+            }
+        }
+
+        // Initialize everything when the page loads
+        window.onload = function() {
+            initMap();
+            map.on('click', onMapClick);
+        };
+    </script>
+</body>
+</html>
