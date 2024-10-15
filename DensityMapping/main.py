@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse
 from BaseClasses import Circle, MapGrid, Square, User, BusinessType, Business, Point
 
 from BaseClasses.User import User, RelationshipStatus
+from BaseClasses.Area import AreaBase, Area
 
 # Database setup
 DATABASE_URL = "sqlite:///./business_areas.db"
@@ -70,7 +71,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # Get the current directory where main.py is located
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -82,6 +82,7 @@ if os.path.exists(fastapi_app_dir):
     app.mount("/FastAPI_app", StaticFiles(directory=fastapi_app_dir), name="fastapi_app")
 else:
     print(f"Warning: Directory {fastapi_app_dir} does not exist")
+
 
 # Pydantic models
 
@@ -100,23 +101,11 @@ class Token(BaseModel):
     token_type: str
 
 
-class AreaBase(BaseModel):
-    area_type: str
-    shape_type: str
-    coordinates: List[Dict[str, float]]
-    radius: Optional[float] = None
-    missing_businesses: List[str]
-    business_data: str
-
-
-class Area(AreaBase):
-    id: int
-    user_id: str
-
 '''
 Function For Password, Tokens and Authentications
 '''
-# -------------------------------------------------------------------------------------------------------------------1
+
+
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -140,7 +129,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-# --------------------------------------------------------------------------------------------------------------------1
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -201,7 +189,8 @@ async def create_user(user: UserCreate):
         print(f"Server error creating user: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Authentication token endpoint
+
+# **Updated Authentication Token Endpoint**
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
@@ -211,11 +200,15 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    # Create the access token with user_id as subject
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user["user_id"]}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    # Return token and success message
+    return {"access_token": access_token, "token_type": "bearer",
+            "message": f"User {user['user_id']} is logged in successfully"}
 
 
 # Create a new area
@@ -230,7 +223,7 @@ async def create_area(area: AreaBase, current_user: dict = Depends(get_current_u
     query = areas.insert().values(**area_data)
     try:
         last_record_id = await database.execute(query)
-        return {**area_data, "id": last_record_id}
+        return {**area_data, "area_id": last_record_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create area: {str(e)}")
 
@@ -250,6 +243,7 @@ async def read_index():
         return FileResponse(index_path)
     raise HTTPException(status_code=404, detail=f"index.html not found at {index_path}")
 
+
 @app.post("/debug/users/")
 async def debug_user_create(user_data: dict):
     try:
@@ -259,6 +253,8 @@ async def debug_user_create(user_data: dict):
     except ValidationError as ve:
         return {"status": "invalid", "errors": ve.errors()}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

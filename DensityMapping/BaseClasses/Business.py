@@ -24,7 +24,6 @@ business_squares_value_dist : dictionary that maps the profit values that the bu
 """
 
 
-
 class Business(Circle):
     business_id: int
     req_income: float

@@ -7,96 +7,306 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css">
     <style>
-        #map { height: 400px; width: 100%; }
-        .form-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
-        .form-group { margin: 10px 0; }
-        .button-group button { margin-right: 10px; }
-    </style>
+    /* General Styling */
+    body {
+        display: flex;
+        flex-direction: row;
+        height: 100vh;
+        margin: 0;
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f4f9;
+    }
+
+    #left-content {
+        flex: 1;
+        padding: 30px;
+        box-sizing: border-box;
+        background-color: #fff;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    #map {
+        flex: 3;
+        height: 100vh;
+        box-sizing: border-box;
+    }
+
+    h2 {
+        font-family: 'Roboto', sans-serif;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .form-section {
+        margin: 20px 0;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+    }
+
+    input[type="text"], input[type="date"], input[type="number"], input[type="password"], textarea, select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #fff;
+        transition: border 0.3s;
+    }
+
+    input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
+        border-color: #007bff;
+    }
+
+    textarea {
+        resize: vertical;
+        height: 80px;
+    }
+
+    button {
+        background-color: #007bff;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    /* Button Group Styling */
+    .button-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .button-group button {
+        flex: 1;
+        background-color: #f8f9fa;
+        color: #333;
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .button-group button:hover {
+        background-color: #007bff;
+        color: white;
+    }
+
+    /* Checkbox Group Styling */
+    .checkbox-group {
+        margin-top: 10px;
+    }
+
+    .checkbox-group label {
+        margin-right: 15px;
+        color: #333;
+    }
+
+    input[type="checkbox"] {
+        margin-right: 5px;
+    }
+
+    /* Custom Styles for Range Control */
+    #radiusControlGroup {
+        margin-bottom: 15px;
+    }
+
+    input[type="range"] {
+        width: 100%;
+    }
+
+    #radiusValue {
+        display: inline-block;
+        margin-left: 10px;
+        font-weight: bold;
+        color: #007bff;
+    }
+
+    /* Modal Styling for Login */
+    #loginModal {
+        display: none;
+        position: fixed;
+        z-index: 2000; /* Higher than the map and other elements */
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%); /* Centers the modal */
+        width: 400px; /* Width of the modal */
+        padding: 20px; /* Padding inside the modal */
+        background-color: white; /* Background color */
+        border-radius: 8px; /* Rounded corners */
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Shadow effect */
+    }
+
+    #loginModal h2 {
+        margin-bottom: 20px;
+    }
+
+    /* Modal Overlay Styling */
+    #modalOverlay {
+        display: none;
+        position: fixed;
+        z-index: 1999; /* Lower than the modal, higher than other content */
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+    }
+
+
+    /* Video Overlay Styling */
+    #videoOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9999; /* Higher z-index to ensure it overlays everything */
+        background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Video Styling */
+    #loadingVideo {
+        width: 100%; /* Adjust width to fit */
+        height: auto; /* Maintain aspect ratio */
+    }
+
+</style>
+
 </head>
+
 <body>
+    <!-- Video Overlay -->
+    <div id="videoOverlay">
+        <video id="loadingVideo" autoplay muted>
+            <source src="start_animation.mp4" type="video/mp4"> <!-- Change to your video file path -->
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <div id="left-content">
+        <!-- Login Button -->
+        <button id="loginButton">Login</button>
+
+        <!-- Login Modal -->
+        <div id="modalOverlay"></div>
+        <div id="loginModal">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginUserId">User ID:</label>
+                    <input type="text" id="loginUserId" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <!-- Create New User Form -->
+        <div id="userFormSection" class="form-section">
+            <h2>Create New User</h2>
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="userId">User ID:</label>
+                    <input type="text" id="userId" required>
+                </div>
+                <div class="form-group">
+                    <label for="userName">Name:</label>
+                    <input type="text" id="userName" required>
+                </div>
+                <div class="form-group">
+                    <label for="birthDate">Birth Date:</label>
+                    <input type="date" id="birthDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="income">Income:</label>
+                    <input type="number" id="income" required>
+                </div>
+                <div class="form-group">
+                    <label for="relationshipStatus">Relationship Status:</label>
+                    <select id="relationshipStatus">
+                        <option value="married">Married</option>
+                        <option value="bachelor">Bachelor</option>
+                        <option value="divorced">Divorced</option>
+                        <option value="in_relationship">In Relationship</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit">Create User</button>
+            </form>
+        </div>
+
+        <!-- Area Details Form -->
+        <div id="areaFormSection" class="form-section">
+            <h2>Area Details</h2>
+            <form id="areaForm">
+                <div class="button-group">
+                    <label>Area Type:</label>
+                    <button type="button" onclick="setAreaType('HOME')">Home Area</button>
+                    <button type="button" onclick="setAreaType('WORK')">Work Area</button>
+                    <button type="button" onclick="setAreaType('OTHER')">Other Area</button>
+                </div>
+                <div class="button-group">
+                    <label>Drawing Mode:</label>
+                    <button type="button" onclick="setDrawingMode('LINE')">Draw Lines</button>
+                    <button type="button" onclick="setDrawingMode('CIRCLE')">Draw Circle</button>
+                </div>
+                <div id="radiusControlGroup" class="form-group" style="display: none;">
+                    <label for="radius">Circle Radius (meters):</label>
+                    <input type="range" id="radius" min="100" max="1000" value="500" step="100">
+                    <span id="radiusValue">500m</span>
+                </div>
+                <div class="checkbox-group">
+                    <label>Missing Businesses:</label><br>
+                    <input type="checkbox" id="food" value="FOOD">
+                    <label for="food">Food</label>
+                    <input type="checkbox" id="fashion" value="FASHION">
+                    <label for="fashion">Fashion</label>
+                    <input type="checkbox" id="health" value="HEALTH">
+                    <label for="health">Health & Cosmetics</label>
+                    <input type="checkbox" id="electronics" value="ELECTRONICS">
+                    <label for="electronics">Electronics</label>
+                </div>
+                <div class="form-group">
+                    <label for="businessData">Additional Business Information:</label>
+                    <textarea id="businessData"></textarea>
+                </div>
+                <button type="submit">Save Area</button>
+            </form>
+        </div>
+    </div>
+
     <div id="map"></div>
 
-    <div id="userFormSection" class="form-section">
-        <h2>Create New User</h2>
-        <form id="userForm">
-            <div class="form-group">
-                <label for="userId">User ID:</label>
-                <input type="text" id="userId" required>
-            </div>
-            <div class="form-group">
-                <label for="userName">Name:</label>
-                <input type="text" id="userName" required>
-            </div>
-            <div class="form-group">
-                <label for="birthDate">Birth Date:</label>
-                <input type="date" id="birthDate" required>
-            </div>
-            <div class="form-group">
-                <label for="income">Income:</label>
-                <input type="number" id="income" required>
-            </div>
-            <div class="form-group">
-                <label for="relationshipStatus">Relationship Status:</label>
-                <select id="relationshipStatus">
-                    <option value="married">Married</option>
-                    <option value="bachelor">Bachelor</option>
-                    <option value="divorced">Divorced</option>
-                    <option value="in_relationship">In Relationship</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" required>
-            </div>
-            <button type="submit">Create User</button>
-        </form>
-    </div>
-
-    <div id="areaFormSection" class="form-section">
-        <h2>Area Details</h2>
-        <form id="areaForm">
-            <div class="button-group">
-                <label>Area Type:</label>
-                <button type="button" onclick="setAreaType('HOME')">Home Area</button>
-                <button type="button" onclick="setAreaType('WORK')">Work Area</button>
-                <button type="button" onclick="setAreaType('OTHER')">Other Area</button>
-            </div>
-            <div class="button-group">
-                <label>Drawing Mode:</label>
-                <button type="button" onclick="setDrawingMode('LINE')">Draw Lines</button>
-                <button type="button" onclick="setDrawingMode('CIRCLE')">Draw Circle</button>
-            </div>
-            <div id="radiusControlGroup" class="form-group" style="display: none;">
-                <label for="radius">Circle Radius (meters):</label>
-                <input type="range" id="radius" min="100" max="1000" value="500" step="100">
-                <span id="radiusValue">500m</span>
-            </div>
-            <div class="checkbox-group">
-                <label>Missing Businesses:</label><br>
-                <input type="checkbox" id="food" value="FOOD">
-                <label for="food">Food</label>
-                <input type="checkbox" id="fashion" value="FASHION">
-                <label for="fashion">Fashion</label>
-                <input type="checkbox" id="health" value="HEALTH">
-                <label for="health">Health & Cosmetics</label>
-                <input type="checkbox" id="electronics" value="ELECTRONICS">
-                <label for="electronics">Electronics</label>
-            </div>
-            <div class="form-group">
-                <label for="businessData">Additional Business Information:</label>
-                <textarea id="businessData"></textarea>
-            </div>
-            <button type="submit">Save Area</button>
-        </form>
-    </div>
-
     <script>
-
         const BACKEND_URL = 'http://localhost:8000';  // Adjust this if your backend is on a different port
-        let map;
-        let drawnItems;
-        let currentAreaType = '';
-        let currentDrawingMode = '';
         let currentUser = null;
 
         // Initialize map
@@ -106,24 +316,54 @@
             drawnItems = new L.FeatureGroup().addTo(map);
         }
 
-        async function debugUserCreate(userData) {
-            try {
-                const response = await fetch(`${BACKEND_URL}/debug/users/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userData)
-                });
-                const result = await response.json();
-                console.log('Debug response:', result);
-            } catch (error) {
-                console.error('Debug error:', error);
-            }
-        }
+        // Show login modal
+        document.getElementById('loginButton').addEventListener('click', function () {
+            document.getElementById('loginModal').style.display = 'block';
+            document.getElementById('modalOverlay').style.display = 'block';
+        });
 
-        // Updated user form submission handler
-                document.getElementById('userForm').addEventListener('submit', async function(e) {
+        // Close login modal
+        document.getElementById('modalOverlay').addEventListener('click', function () {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('modalOverlay').style.display = 'none';
+        });
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const userId = document.getElementById('loginUserId').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const formData = new FormData();
+                formData.append('username', userId);
+                formData.append('password', password);
+
+                const response = await fetch(`${BACKEND_URL}/token`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentUser = {
+                        token: result.access_token,
+                        userId: userId
+                    };
+                    alert('Logged in successfully!');
+                    document.getElementById('userFormSection').style.display = 'none';  // Hide create user form
+                    document.getElementById('loginModal').style.display = 'none';  // Close login modal
+                    document.getElementById('modalOverlay').style.display = 'none';
+                } else {
+                    alert('Login failed. Please check your credentials.');
+                }
+            } catch (error) {
+                alert('Error logging in: ' + error.message);
+            }
+        });
+
+        document.getElementById('userForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const userData = {
                 user_id: document.getElementById('userId').value,
@@ -154,7 +394,6 @@
                 } else {
                     let errorMessage;
                     if (typeof result.detail === 'object') {
-                        // Handle validation errors that come as objects
                         errorMessage = JSON.stringify(result.detail, null, 2);
                     } else {
                         errorMessage = result.detail || 'Unknown error occurred';
@@ -191,7 +430,6 @@
             }
         }
 
-        // Handle area form submission
         document.getElementById('areaForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!currentUser) {
@@ -270,7 +508,6 @@
             document.getElementById('radiusValue').textContent = e.target.value + 'm';
         });
 
-        // Map click handler
         function onMapClick(e) {
             if (!currentDrawingMode || !currentAreaType) {
                 alert('Please select an area type and drawing mode first!');
@@ -283,7 +520,6 @@
                 const radius = parseInt(document.getElementById('radius').value);
                 L.circle(e.latlng, {radius: radius}).addTo(drawnItems);
             } else if (currentDrawingMode === 'LINE') {
-                // For simplicity, just create a small line. In a real app, you'd want proper line drawing.
                 const points = [
                     e.latlng,
                     [e.latlng.lat + 0.01, e.latlng.lng + 0.01]
@@ -292,11 +528,15 @@
             }
         }
 
-        // Initialize everything when the page loads
         window.onload = function() {
             initMap();
             map.on('click', onMapClick);
         };
+
+        // Hide video overlay after the video ends
+        document.getElementById('loadingVideo').addEventListener('ended', function() {
+            document.getElementById('videoOverlay').style.display = 'none'; // Hide overlay
+        });
     </script>
 </body>
 </html>
