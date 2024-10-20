@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import date, timedelta, datetime
 from enum import Enum
@@ -101,6 +102,10 @@ class Token(BaseModel):
     token_type: str
 
 
+class Config:
+    json_encoders = {
+        BusinessType.BusinessType: lambda v: v.value  # Use the full path to the enum
+    }
 '''
 Function For Password, Tokens and Authentications
 '''
@@ -214,11 +219,14 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 # Create a new area
 @app.post("/areas/", response_model=Area)
 async def create_area(area: AreaBase, current_user: dict = Depends(get_current_user)):
-    area_data = area.dict()
+    area_data = json.loads(area.json())  # Convert to dict and ensure all values are JSON serializable
     area_data["user_id"] = current_user["user_id"]
 
-    if isinstance(area_data["missing_businesses"], list):
-        area_data["missing_businesses"] = area_data["missing_businesses"]
+    # Validate business types
+    try:
+        area_data["missing_businesses"] = [BusinessType.BusinessType[bt].value for bt in area_data["missing_businesses"]]
+    except KeyError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid business type: {str(e)}")
 
     query = areas.insert().values(**area_data)
     try:
@@ -226,6 +234,9 @@ async def create_area(area: AreaBase, current_user: dict = Depends(get_current_u
         return {**area_data, "area_id": last_record_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create area: {str(e)}")
+
+
+
 
 
 # Get all areas for the current user

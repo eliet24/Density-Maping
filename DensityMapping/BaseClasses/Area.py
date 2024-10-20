@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 
+from .BusinessType import BusinessType
+
 """
 ------------------------------------------------- AreaBase and Area -------------------------------------------------
 Area Class: represents a Area on the map api, The Area shape the user draw on the map
@@ -14,17 +16,15 @@ business_data:  a free string with input data of the user about the missing busi
 functions:
 -------------------------------------------------------------------------------------------------------------
 """
-# TODO: create ENUM for area_type and add select option in the web_page, create ENUM or class for shape_type
-# TODO: use the Point class for the cordinates represntation, the missing_business should hold a list of BusinessType
-# TODO: Enum class, maybe create Sub BusinessTypes,
+
 
 class AreaBase(BaseModel):
     area_type: str
     shape_type: str
-    coordinates: List[Dict[str, float]]     # TODO: check how to change to Point class presentation
-    radius: Optional[float] = None
-    missing_businesses: List[str]
-    business_data: str
+    coordinates: List[Dict[str, float]]
+    radius: Optional[float]
+    missing_businesses: List[BusinessType]
+    business_data: Optional[str]
 
 
 class Area(AreaBase):

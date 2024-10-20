@@ -14,14 +14,14 @@
         height: 100vh;
         margin: 0;
         font-family: 'Arial', sans-serif;
-        background-color: #f4f4f9;
+        background-color: lightblue;
     }
 
     #left-content {
         flex: 1;
         padding: 30px;
         box-sizing: border-box;
-        background-color: #fff;
+        background-color: lightblue;
         box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
     }
 
@@ -41,7 +41,7 @@
         margin: 20px 0;
         padding: 20px;
         border-radius: 8px;
-        background-color: #f9f9f9;
+        background-color: lightblue;
         border: 1px solid #ddd;
     }
 
@@ -280,19 +280,42 @@
                 </div>
                 <div id="radiusControlGroup" class="form-group" style="display: none;">
                     <label for="radius">Circle Radius (meters):</label>
-                    <input type="range" id="radius" min="100" max="1000" value="500" step="100">
+                    <input type="range" id="radius" min="100" max="2000" value="500" step="100">
                     <span id="radiusValue">500m</span>
                 </div>
+
                 <div class="checkbox-group">
-                    <label>Missing Businesses:</label><br>
-                    <input type="checkbox" id="food" value="FOOD">
-                    <label for="food">Food</label>
+                    <button type="button" onclick="toggleBusinessTypeDropdown()">Select Business Type</button>
+                    <label>select business category:</label><br>
                     <input type="checkbox" id="fashion" value="FASHION">
                     <label for="fashion">Fashion</label>
-                    <input type="checkbox" id="health" value="HEALTH">
-                    <label for="health">Health & Cosmetics</label>
-                    <input type="checkbox" id="electronics" value="ELECTRONICS">
-                    <label for="electronics">Electronics</label>
+                    <input type="checkbox" id="food" value="FOOD">
+                    <label for="food">Food</label>
+                    <input type="checkbox" id="health_and_wellness" value="HEALTH_AND_WELLNESS">
+                    <label for="health_and_wellness">Health & Wellness</label>
+                    <input type="checkbox" id="electronics_and_tech" value="ELECTRONICS_AND_TECH">
+                    <label for="electronics_and_tech">Electronics & Tech</label>
+                    <input type="checkbox" id="beauty_and_personal_Care" value="BEAUTY_AND_PERSONAL_CARE">
+                    <label for="beauty_and_personal_Care">Beauty & Personal Care</label>
+                    <input type="checkbox" id="automotive" value="AUTOMOTIVE">
+                    <label for="automotive">Automotive</label>
+                    <input type="checkbox" id="finance_and_insurance" value="FINANCE_AND_INSURANCE">
+                    <label for="finance_and_insurance">Finance & Insurance</label>
+                    <input type="checkbox" id="entertainment_and_media" value="ENTERTAINMENT_AND_MEDIA">
+                    <label for="entertainment_and_media">Entertainment & Media</label>
+                    <input type="checkbox" id="education" value="EDUCATION">
+                    <label for="education">Education</label>
+                    <input type="checkbox" id="hospitality_and_tourism" value="HOSPITALITY_AND_TOURISM">
+                    <label for="hospitality_and_tourism">Hospitality & Tourism</label>
+                    <input type="checkbox" id="agriculture_and_farming" value="AGRICULTURE_AND_FARMING">
+                    <label for="agriculture_and_farming">Agriculture & Farming</label>
+                    <input type="checkbox" id="legal_services" value="LEGAL_SERVICES">
+                    <label for="legal_services">Legal Services</label>
+                    <input type="checkbox" id="nightlife" value="NIGHTLIFE">
+                    <label for="nightlife">Nightlife</label>
+                    <input type="checkbox" id="pets_and_animals" value="PETS_AND_ANIMALS">
+                    <label for="pets_and_animals">Pets & Animals</label>
+
                 </div>
                 <div class="form-group">
                     <label for="businessData">Additional Business Information:</label>
@@ -477,7 +500,7 @@
                     alert('Area saved successfully!');
                     drawnItems.clearLayers();
                 } else {
-                    alert(`Error: ${result.detail}`);
+                    alert(`Error: ${JSON.stringify(result.detail)}`);
                 }
             } catch (error) {
                 alert('Error saving area: ' + error.message);
@@ -524,6 +547,7 @@
                     e.latlng,
                     [e.latlng.lat + 0.01, e.latlng.lng + 0.01]
                 ];
+
                 L.polyline(points).addTo(drawnItems);
             }
         }
@@ -537,6 +561,45 @@
         document.getElementById('loadingVideo').addEventListener('ended', function() {
             document.getElementById('videoOverlay').style.display = 'none'; // Hide overlay
         });
+
+        function saveArea() {
+            const missingBusinesses = Array.from(document.querySelectorAll('input[name="missing_businesses"]:checked'))
+                .map(input => input.value);
+
+            const areaData = {
+                area_type: document.querySelector('input[name="area_type"]:checked').value,
+                shape_type: document.querySelector('input[name="drawing_mode"]:checked').value,
+                coordinates: [], // You need to implement this based on your map drawing logic
+                radius: parseFloat(document.getElementById('radiusValue').textContent.replace('m', '')),
+                missing_businesses: missingBusinesses,
+                business_data: document.getElementById('additionalInfo').value
+            };
+
+            console.log('Sending area data:', JSON.stringify(areaData));  // Log the data being sent
+
+            fetch('/areas/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                },
+                body: JSON.stringify(areaData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Area saved:', data);
+                alert('Area saved successfully!');
+            })
+            .catch(error => {
+                console.error('Error saving area:', error);
+                alert(`Error saving area: ${error.detail || 'Please try again.'}`);
+            });
+        }
     </script>
 </body>
 </html>
