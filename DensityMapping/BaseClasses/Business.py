@@ -1,4 +1,4 @@
-
+from enum import Enum
 from typing import Dict, Optional
 from matplotlib import pyplot as plt
 from .Circle import Circle
@@ -6,6 +6,7 @@ from .BusinessType import BusinessType
 from .Square import Square
 from .Point import Point
 from pydantic import BaseModel
+
 
 """
 ------------------------------------------------- Business -------------------------------------------------
