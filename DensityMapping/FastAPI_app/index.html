@@ -16,6 +16,20 @@
 
     <style>
 
+        .category-btn {
+            background-color: #03C03C;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .category-btn:hover {
+            background-color: #357abd;
+        }
+
         /* Basic CSS styles for positioning */
         .button-container {
             display: flex;
@@ -350,65 +364,87 @@
                     <span id="radiusValue">500m</span>
                 </div>
 
-                <div class="checkbox-group">
-                    <label>Select business category:</label><br>
+                <div class="form-group">
+                    <button type="button" id="showBusinessCategories" class="category-btn">
+                        Show Business Categories
+                    </button>
+                </div>
+
+
+                <div id="businessCategoriesContainer" class="checkbox-group" style="display: none;">
+                    <h3>Business Categories</h3>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="fashion" value="FASHION">
+                        <input type="checkbox" id="fashion" name="business_category">
                         <label for="fashion">Fashion</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="food" value="FOOD">
+                        <input type="checkbox" id="food" name="business_category">
                         <label for="food">Food</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="health_and_wellness" value="HEALTH_AND_WELLNESS">
-                        <label for="health_and_wellness">Health & Wellness</label>
+                        <input type="checkbox" id="health" name="business_category">
+                        <label for="health">Health & Wellness</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="electronics_and_tech" value="ELECTRONICS_AND_TECH">
-                        <label for="electronics_and_tech">Electronics & Tech</label>
+                        <input type="checkbox" id="electronics" name="business_category">
+                        <label for="electronics">Electronics & Tech</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="beauty_and_personal_Care" value="BEAUTY_AND_PERSONAL_CARE">
-                        <label for="beauty_and_personal_Care">Beauty & Personal Care</label>
+                        <input type="checkbox" id="beauty" name="business_category">
+                        <label for="beauty">Beauty & Personal Care</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="finance_and_insurance" value="FINANCE_AND_INSURANCE">
-                        <label for="finance_and_insurance">Finance & Insurance</label>
+                        <input type="checkbox" id="finance" name="business_category">
+                        <label for="finance">Finance & Insurance</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="automotive" value="AUTOMOTIVE">
+                        <input type="checkbox" id="automotive" name="business_category">
                         <label for="automotive">Automotive</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="entertainment_and_media" value="ENTERTAINMENT_AND_MEDIA">
-                        <label for="entertainment_and_media">Entertainment & Media</label>
+                        <input type="checkbox" id="entertainment" name="business_category">
+                        <label for="entertainment">Entertainment & Media</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="education" value="EDUCATION">
-                         <label for="education">Education</label>
+                        <input type="checkbox" id="education" name="business_category">
+                        <label for="education">Education</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="hospitality_and_tourism" value="HOSPITALITY_AND_TOURISM">
-                        <label for="hospitality_and_tourism">Hospitality & Tourism</label>
+                        <input type="checkbox" id="hospitality" name="business_category">
+                        <label for="hospitality">Hospitality & Tourism</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="agriculture_and_farming" value="AGRICULTURE_AND_FARMING">
-                        <label for="agriculture_and_farming">Agriculture & Farming</label>
+                        <input type="checkbox" id="agriculture" name="business_category">
+                        <label for="agriculture">Agriculture & Farming</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="legal_services" value="LEGAL_SERVICES">
-                        <label for="legal_services">Legal Services</label>
+                        <input type="checkbox" id="legal" name="business_category">
+                        <label for="legal">Legal Services</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="nightlife" value="NIGHTLIFE">
+                        <input type="checkbox" id="nightlife" name="business_category">
                         <label for="nightlife">Nightlife</label>
                     </div>
+
                     <div class="checkbox-item">
-                        <input type="checkbox" id="pets_and_animals" value="PETS_AND_ANIMALS">
-                        <label for="pets_and_animals">Pets & Animals</label>
+                        <input type="checkbox" id="pets" name="business_category">
+                        <label for="pets">Pets & Animals</label>
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label for="businessData">Additional Business Information:</label>
                     <textarea id="businessData"></textarea>
@@ -841,6 +877,47 @@
             searchResultsList.style.display = 'none';
           }
         });
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the button and container
+            const showBusinessCategoriesBtn = document.getElementById('showBusinessCategories');
+            const businessCategoriesContainer = document.getElementById('businessCategoriesContainer');
+
+            // Business category enum mapping
+            const BUSINESS_CATEGORIES = {
+                'Fashion': 'FASHION',
+                'Food': 'FOOD',
+                'Health & Wellness': 'HEALTH_AND_WELLNESS',
+                'Electronics & Tech': 'ELECTRONICS_AND_TECH',
+                'Beauty & Personal Care': 'BEAUTY_AND_PERSONAL_CARE',
+                'Finance & Insurance': 'FINANCE_AND_INSURANCE',
+                'Automotive': 'AUTOMOTIVE',
+                'Entertainment & Media': 'ENTERTAINMENT_AND_MEDIA',
+                'Education': 'EDUCATION',
+                'Hospitality & Tourism': 'HOSPITALITY_AND_TOURISM',
+                'Agriculture & Farming': 'AGRICULTURE_AND_FARMING',
+                'Legal Services': 'LEGAL_SERVICES',
+                'Nightlife': 'NIGHTLIFE',
+                'Pets & Animals': 'PETS_AND_ANIMALS'
+            };
+
+            // Toggle categories visibility
+            showBusinessCategoriesBtn.addEventListener('click', function() {
+                const isHidden = businessCategoriesContainer.style.display === 'none';
+                businessCategoriesContainer.style.display = isHidden ? 'block' : 'none';
+                showBusinessCategoriesBtn.textContent = isHidden ? 'Hide Business Categories' : 'Show Business Categories';
+            });
+
+            // Update checkbox values
+            const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                const label = checkbox.nextElementSibling.textContent.trim();
+                checkbox.value = BUSINESS_CATEGORIES[label] || label.toUpperCase().replace(/\s+/g, '_');
+            });
+        });
+
+
 
     </script>
 </body>

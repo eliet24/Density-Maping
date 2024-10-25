@@ -78,7 +78,7 @@ class Business(Circle):
 
     # function for finding the initialized business center on the MapGrid
     def find_init_center(self, size_ratio: int):
-        return Point(x = size_ratio / 2 * self.circle_to_square(), y = size_ratio / 2 * self.circle_to_square())
+        return Point(x=size_ratio / 2 * self.circle_to_square(), y=size_ratio / 2 * self.circle_to_square())
 
     '''def plot_business(self):
         """
