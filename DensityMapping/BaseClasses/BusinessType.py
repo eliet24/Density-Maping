@@ -1,7 +1,6 @@
 from enum import Enum
 
 
-
 class BusinessType(Enum):
     FASHION = "FASHION"
     FOOD = "FOOD"
@@ -17,4 +16,6 @@ class BusinessType(Enum):
     LEGAL_SERVICES = "LEGAL_SERVICES"
     NIGHTLIFE = "NIGHTLIFE"
     PETS_AND_ANIMALS = "PETS_AND_ANIMALS"
+
+
 

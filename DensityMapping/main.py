@@ -18,6 +18,7 @@ from BaseClasses import Circle, MapGrid, Square, User, BusinessType, Business, P
 
 from BaseClasses.User import User, RelationshipStatus
 from BaseClasses.Area import AreaBase, Area
+from BaseClasses.PublicInstitution import InstitutionType, PublicInstitution
 
 # Database setup
 DATABASE_URL = "sqlite:///./business_areas.db"
@@ -54,7 +55,9 @@ areas = sqlalchemy.Table(
     sqlalchemy.Column("coordinates", sqlalchemy.JSON),
     sqlalchemy.Column("radius", sqlalchemy.Float, nullable=True),
     sqlalchemy.Column("missing_businesses", sqlalchemy.JSON),
+    sqlalchemy.Column("missing_institutions", sqlalchemy.JSON),
     sqlalchemy.Column("business_data", sqlalchemy.String),
+    sqlalchemy.Column("institution_data", sqlalchemy.String),
 )
 
 # Create database engine and tables
@@ -234,9 +237,6 @@ async def create_area(area: AreaBase, current_user: dict = Depends(get_current_u
         return {**area_data, "area_id": last_record_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create area: {str(e)}")
-
-
-
 
 
 # Get all areas for the current user

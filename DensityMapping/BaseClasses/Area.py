@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Dict, Optional
-
+from .PublicInstitution import PublicInstitution, InstitutionType
 from .BusinessType import BusinessType
 
 """
@@ -23,8 +23,10 @@ class AreaBase(BaseModel):
     shape_type: str
     coordinates: List[Dict[str, float]]
     radius: Optional[float]
-    missing_businesses: List[BusinessType]
+    missing_businesses: Optional[List[BusinessType]]
+    missing_institutions: Optional[List[InstitutionType]]
     business_data: Optional[str]
+    institution_data: Optional[str]
 
 
 class Area(AreaBase):
