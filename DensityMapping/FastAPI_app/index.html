@@ -686,6 +686,7 @@
             } catch (error) {
                 alert('Error saving area: ' + error.message);
             }
+            fetchAndDisplayAreas();
         });
 
         function setAreaType(type) {
@@ -1035,8 +1036,15 @@
 
                         const latLng = area.coordinates[0]; // Assuming coordinates is an array of objects with lat and lng
                         const radius = area.radius || 500; // Default radius if not provided
-                        const businessType = area.business_type;
-                        const institutionType = area.institution_type;
+
+                        // Determine the business and institution types
+                        let businessType = area.missing_businesses && area.missing_businesses.length > 0
+                            ? area.missing_businesses[0]
+                            : null;
+
+                        let institutionType = area.missing_institutions && area.missing_institutions.length > 0
+                            ? area.missing_institutions[0]
+                            : null;
 
                         let color = "blue"; // Default color
                         if (businessType) {

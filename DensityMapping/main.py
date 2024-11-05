@@ -2,6 +2,8 @@ import json
 import os
 from datetime import date, timedelta, datetime
 from enum import Enum
+from random import randint
+
 import jwt
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,7 +17,7 @@ from sqlalchemy import create_engine
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from BaseClasses import Circle, MapGrid, Square, User, BusinessType, Business, Point
-
+from collections import defaultdict
 from BaseClasses.User import User, RelationshipStatus
 from BaseClasses.Area import AreaBase, Area
 from BaseClasses.PublicInstitution import InstitutionType, PublicInstitution
@@ -265,6 +267,7 @@ async def debug_user_create(user_data: dict):
         return {"status": "invalid", "errors": ve.errors()}
 
 
+
 @app.get("/all_areas", response_model=List[dict])
 async def get_all_areas():
     query = areas.select()
@@ -281,22 +284,7 @@ async def get_all_areas():
     ]
 
 
-'''
-@app.get("/all_areas", response_model=List[dict])
-async def get_all_areas():
-    query = areas.select().where(areas.c.coordinates.is_not(None))
-    results = await database.fetch_all(query)
-    return [
-        {
-            "id": area["id"],
-            "coordinates": json.loads(area["coordinates"]) if area["coordinates"] else [],
-            "radius": area["radius"],
-            "missing_businesses": json.loads(area["missing_businesses"]) if area["missing_businesses"] else [],
-            "missing_institutions": json.loads(area["missing_institutions"]) if area["missing_institutions"] else [],
-        }
-        for area in results if area["coordinates"]
-    ]
-'''
+
 
 if __name__ == "__main__":
     import uvicorn
