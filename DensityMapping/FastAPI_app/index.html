@@ -736,6 +736,7 @@
         window.onload = function() {
             initMap();
             map.on('click', onMapClick);
+            fetchAndDisplayAreas(); // Load areas on map initialization
         };
 
         // Hide video overlay after the video ends
@@ -1005,12 +1006,98 @@
             clearAreaDetails();
         });
 
-
-
         document.addEventListener('DOMContentLoaded', function() {
             // Clear all text boxes in "Create New User" section on page load
             document.getElementById('userForm').reset();
         });
+
+
+
+
+        function fetchAndDisplayAreas() {
+            fetch(`${BACKEND_URL}/all_areas`)
+                .then(response => {
+                    console.log("API Response Status:", response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(areas => {
+                    console.log("Fetched areas data:", areas);
+                    areas.forEach(area => {
+                        console.log("Processing area:", area);
+
+                        if (!area.coordinates || !Array.isArray(area.coordinates) || area.coordinates.length === 0) {
+                            console.error("Invalid or missing coordinates for area:", area.id);
+                            return;
+                        }
+
+                        const latLng = area.coordinates[0]; // Assuming coordinates is an array of objects with lat and lng
+                        const radius = area.radius || 500; // Default radius if not provided
+                        const businessType = area.business_type;
+                        const institutionType = area.institution_type;
+
+                        let color = "blue"; // Default color
+                        if (businessType) {
+                            color = getColorForBusinessType(businessType);
+                        } else if (institutionType) {
+                            color = getColorForInstitutionType(institutionType);
+                        }
+
+                        console.log(`Drawing circle at (${latLng.lat}, ${latLng.lng}) with radius ${radius} and color ${color}`);
+
+                        L.circle([latLng.lat, latLng.lng], {
+                            color: color,
+                            radius: radius
+                        }).addTo(map);
+                    });
+                })
+                .catch(error => console.error("Error fetching or displaying areas:", error));
+        }
+
+
+        function getColorForBusinessType(type) {
+            const businessColors = {
+                "FASHION": "purple",
+                "FOOD": "orange",
+                "HEALTH_AND_WELLNESS": "green",
+                "ELECTRONICS_AND_TECH": "blue",
+                "BEAUTY_AND_PERSONAL_CARE": "pink",
+                "FINANCE_AND_INSURANCE": "gold",
+                "AUTOMOTIVE": "gray",
+                "ENTERTAINMENT_AND_MEDIA": "lime",
+                "EDUCATION": "cyan",
+                "HOSPITALITY_AND_TOURISM": "teal",
+                "AGRICULTURE_AND_FARMING": "brown",
+                "LEGAL_SERVICES": "maroon",
+                "NIGHTLIFE": "darkblue",
+                "PETS_AND_ANIMALS": "darkgreen"
+            };
+            const color = businessColors[type] || "blue";
+            console.log(`getColorForBusinessType - Type: ${type}, Color: ${color}`);
+            return color;
+        }
+
+        function getColorForInstitutionType(type) {
+            const institutionColors = {
+                "GOVERNMENTAL": "red",
+                "HEALTHCARE": "yellow",
+                "PUBLIC_SAFETY_AND_EMERGENCY_SERVICES": "orange",
+                "JUDICIAL_AND_LEGAL": "purple",
+                "TRANSPORTATION_AND_INFRASTRUCTURE": "brown",
+                "ECONOMIC_AND_FINANCIAL": "gold",
+                "CULTURE_AND_SPORTS": "lime",
+                "SOCIAL_AND_WELFARE_SERVICES": "green",
+                "LABOR_AND_WORKFORCE": "cyan",
+                "RELIGIOUS_INSTITUTIONS": "darkred",
+                "EDUCATIONAL_INSTITUTION": "teal"
+            };
+            const color = institutionColors[type] || "blue";
+            console.log(`getColorForInstitutionType - Type: ${type}, Color: ${color}`);
+            return color;
+        }
+
 
 
     </script>

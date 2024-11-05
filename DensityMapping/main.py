@@ -265,6 +265,39 @@ async def debug_user_create(user_data: dict):
         return {"status": "invalid", "errors": ve.errors()}
 
 
+@app.get("/all_areas", response_model=List[dict])
+async def get_all_areas():
+    query = areas.select()
+    results = await database.fetch_all(query)
+    return [
+        {
+            "id": area["id"],
+            "coordinates": area["coordinates"],
+            "radius": area["radius"],
+            "missing_businesses": area["missing_businesses"] if isinstance(area["missing_businesses"], list) else [],
+            "missing_institutions": area["missing_institutions"] if isinstance(area["missing_institutions"], list) else [],
+        }
+        for area in results if area["coordinates"]
+    ]
+
+
+'''
+@app.get("/all_areas", response_model=List[dict])
+async def get_all_areas():
+    query = areas.select().where(areas.c.coordinates.is_not(None))
+    results = await database.fetch_all(query)
+    return [
+        {
+            "id": area["id"],
+            "coordinates": json.loads(area["coordinates"]) if area["coordinates"] else [],
+            "radius": area["radius"],
+            "missing_businesses": json.loads(area["missing_businesses"]) if area["missing_businesses"] else [],
+            "missing_institutions": json.loads(area["missing_institutions"]) if area["missing_institutions"] else [],
+        }
+        for area in results if area["coordinates"]
+    ]
+'''
+
 if __name__ == "__main__":
     import uvicorn
 
