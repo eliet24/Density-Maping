@@ -680,6 +680,18 @@
                 if (response.ok) {
                     alert('Area saved successfully!');
                     drawnItems.clearLayers();
+
+                    // Clear all checkboxes and text areas in "Area Details" section
+                    clearAreaDetails();
+                    // Reset the drawing mode
+                    currentDrawingMode = null;
+                    document.getElementById('radiusControlGroup').style.display = 'none';
+                    // Reset the active button styles
+                    Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                        btn.style.backgroundColor = '#20B2AA';
+                        btn.style.color = '';
+                    });
+
                 } else {
                     alert(`Error: ${JSON.stringify(result.detail)}`);
                 }
@@ -696,6 +708,7 @@
                 btn.style.color = btn.textContent.includes(type) ? 'white' : '';
             });
         }
+
 
         function setDrawingMode(mode) {
             currentDrawingMode = mode;
@@ -715,7 +728,7 @@
 
         function onMapClick(e) {
             if (!currentDrawingMode || !currentAreaType) {
-                alert('Please select an area type and drawing mode first!');
+                // alert('Please select an area type and drawing mode first!');
                 return;
             }
 
@@ -784,6 +797,7 @@
             .then(data => {
                 console.log('Area saved:', data);
                 alert('Area saved successfully!');
+
             })
             .catch(error => {
                 console.error('Error saving area:', error);
