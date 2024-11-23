@@ -266,24 +266,61 @@ async def debug_user_create(user_data: dict):
     except ValidationError as ve:
         return {"status": "invalid", "errors": ve.errors()}
 
-
-
+'''
 @app.get("/all_areas", response_model=List[dict])
 async def get_all_areas():
     query = areas.select()
     results = await database.fetch_all(query)
+
+    # Ensure that we are accessing keys directly and handling the data properly
     return [
         {
             "id": area["id"],
             "coordinates": area["coordinates"],
             "radius": area["radius"],
             "missing_businesses": area["missing_businesses"] if isinstance(area["missing_businesses"], list) else [],
-            "missing_institutions": area["missing_institutions"] if isinstance(area["missing_institutions"], list) else [],
+            "missing_institutions": area["missing_institutions"] if isinstance(area["missing_institutions"],
+                                                                               list) else [],
+            "business_data": area["business_data"] if "business_data" in area else "",  # Access directly
+            "institution_data": area["institution_data"] if "institution_data" in area else "",  # Access directly
         }
         for area in results if area["coordinates"]
     ]
+'''
 
 
+@app.get("/all_areas", response_model=List[dict])
+async def get_all_areas():
+    # Correctly select columns from both tables
+    query = sqlalchemy.select(
+        areas.c.id,
+        areas.c.coordinates,
+        areas.c.radius,
+        areas.c.missing_businesses,
+        areas.c.missing_institutions,
+        areas.c.business_data,
+        areas.c.institution_data,
+        users.c.user_name.label("user_name")  # Add user_name with a label
+    ).select_from(
+        areas.join(users, areas.c.user_id == users.c.user_id)  # Define the join condition
+    )
+
+    results = await database.fetch_all(query)
+
+    return [
+        {
+            "id": area["id"],
+            "coordinates": area["coordinates"],
+            "radius": area["radius"],
+            "missing_businesses": area["missing_businesses"] if isinstance(area["missing_businesses"], list) else [],
+            "missing_institutions": area["missing_institutions"] if isinstance(area["missing_institutions"],
+                                                                               list) else [],
+            "business_data": area["business_data"] if "business_data" in area else "",
+            "institution_data": area["institution_data"] if "institution_data" in area else "",
+            "user_name": area["user_name"],  # Include the user_name
+        }
+        for area in results if area["coordinates"]
+    ]
 
 
 if __name__ == "__main__":

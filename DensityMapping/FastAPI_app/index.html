@@ -487,8 +487,10 @@
 
     <script>
 
+
         const BACKEND_URL = 'http://localhost:8000';  // Adjust this if your backend is on a different port
         let currentUser = null;
+
 
         // Initialize map
         function initMap() {
@@ -1127,23 +1129,100 @@
         }
 
         function displayAreaDetails(area) {
-            // Display the details in a popup or on the page
+            const businessData = area.business_data || 'N/A';
+            const institutionData = area.institution_data || 'N/A';
+            const userName = area.user_name || 'Unknown';  // Handle missing user_name gracefully
+
             const detailsHtml = `
                 <h3>Area ID: ${area.id}</h3>
                 <p><strong>Coordinates:</strong> ${JSON.stringify(area.coordinates)}</p>
                 <p><strong>Radius:</strong> ${area.radius}</p>
+                <p><strong>Added By:</strong> ${userName}</p> <!-- Show user_name here -->
                 <p><strong>Missing Businesses:</strong> ${area.missing_businesses.join(', ')}</p>
                 <p><strong>Missing Institutions:</strong> ${area.missing_institutions.join(', ')}</p>
-                <p><strong>Business Data:</strong> ${area.business_data || 'N/A'}</p>
-                <p><strong>Institution Data:</strong> ${area.institution_data || 'N/A'}</p>
+                <p><strong>Business Data:</strong> ${businessData}</p>
+                <p><strong>Institution Data:</strong> ${institutionData}</p>
             `;
 
-            // You can display the details in a popup or in a separate HTML element
             const popup = L.popup()
                 .setLatLng(area.coordinates[0])  // Position the popup near the circle
                 .setContent(detailsHtml)
                 .openOn(map);
-}
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize state variables for the buttons
+        const buttonStates = {
+            HOME: false,
+            WORK: false,
+            OTHER: false,
+            LINE: false,
+            CIRCLE: false,
+        };
+
+        // Function to handle button toggle
+        function toggleButton(button, mode) {
+            if (buttonStates[mode]) {
+                button.classList.remove('active');
+                buttonStates[mode] = false;
+                // Reset functionality (clear drawings, reset mode, etc.)
+                if (mode === 'LINE' || mode === 'CIRCLE') {
+                    drawnItems.clearLayers();
+                    currentDrawingMode = null;
+                    document.getElementById('radiusControlGroup').style.display = 'none';
+                } else {
+                    currentAreaType = null;
+                }
+            } else {
+                // Reset other buttons in the same group and activate the current button
+                if (mode === 'HOME' || mode === 'WORK' || mode === 'OTHER') {
+                    // Reset area type buttons
+                    Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                        if (btn.textContent.includes('Area')) {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    buttonStates.HOME = buttonStates.WORK = buttonStates.OTHER = false;
+                } else if (mode === 'LINE' || mode === 'CIRCLE') {
+                    // Reset drawing mode buttons
+                    Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                        if (btn.textContent.includes('Draw')) {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    buttonStates.LINE = buttonStates.CIRCLE = false;
+                }
+
+                // Activate the current button and set functionality
+                button.classList.add('active');
+                buttonStates[mode] = true;
+
+                if (mode === 'LINE' || mode === 'CIRCLE') {
+                    currentDrawingMode = mode;
+                    document.getElementById('radiusControlGroup').style.display = mode === 'CIRCLE' ? 'block' : 'none';
+                } else {
+                    currentAreaType = mode;
+                }
+            }
+        }
+
+        // Attach event listeners to all buttons
+        document.querySelectorAll('.button-group button').forEach(button => {
+            button.addEventListener('click', function () {
+                const mode = this.textContent.includes('Home') ? 'HOME' :
+                    this.textContent.includes('Work') ? 'WORK' :
+                    this.textContent.includes('Other') ? 'OTHER' :
+                    this.textContent.includes('Line') ? 'LINE' :
+                    this.textContent.includes('Circle') ? 'CIRCLE' : null;
+
+                if (mode) {
+                    toggleButton(this, mode);
+                }
+
+                });
+            });
+        });
 
     </script>
 </body>
