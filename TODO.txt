@@ -1,86 +1,13 @@
 1) למחוק את כל הפונקציונליות שקשורה לציור של קווים !!
 2) לוודא select/unselect נכון של הכפתורים של area information גם מבחינת צבע וגם מבחינת פונקציונליות 
+3) להוסיף דאטא של מספר טלפון לuser ובמידע על אזור שיהיה ניתן לתקשר דרך וואטסאפ עם המשתמש שהוסיף את האזור.
+4) להוסיף אופציה לעשות +1 (או לייק ודיסלייק) למיקום שכבר סומן על המפה, וככה לכל אזור יהיה ספירה של כמה אנשים תומכים בביקוש וכו'.
+5) לחשוב על טכנולוגיות ל DataBase
 
-3) לחשוב על ויזואליציות לdata באתר
-4) לסדר את התת קטגוריות לעסקים מתחת למפה ולפי צבעים ולסדר את התיבות מידע על העסק
+* לחשוב על ויזואליציות לdata באתר
+* לסדר את התת קטגוריות לעסקים מתחת למפה ולפי צבעים ולסדר את התיבות מידע על העסק
 
 
 עדכונים:
 2) בינתיים נראה שסודרת יש לבדוק יותר לעומק שאין באגים.
 
-
-        function displayAreaDetails(area) {
-            // Display the details in a popup or on the page
-            const detailsHtml = `
-                <h3>Area ID: ${area.id}</h3>
-                <p><strong>Coordinates:</strong> ${JSON.stringify(area.coordinates)}</p>
-                <p><strong>Radius:</strong> ${area.radius}</p>
-                <p><strong>Missing Businesses:</strong> ${area.missing_businesses.join(', ')}</p>
-                <p><strong>Missing Institutions:</strong> ${area.missing_institutions.join(', ')}</p>
-                <p><strong>Business Data:</strong> ${area.business_data || 'N/A'}</p>
-                <p><strong>Institution Data:</strong> ${area.institution_data || 'N/A'}</p>
-            `;
-
-            // You can display the details in a popup or in a separate HTML element
-            const popup = L.popup()
-                .setLatLng(area.coordinates[0])  // Position the popup near the circle
-                .setContent(detailsHtml)
-                .openOn(map);
-        }
-
-
-
-function fetchAndDisplayAreas() {
-            fetch(`${BACKEND_URL}/all_areas`)
-                .then(response => {
-                    console.log("API Response Status:", response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(areas => {
-                    console.log("Fetched areas data:", areas);
-                    areas.forEach(area => {
-                        console.log("Processing area:", area);
-
-                        if (!area.coordinates || !Array.isArray(area.coordinates) || area.coordinates.length === 0) {
-                            console.error("Invalid or missing coordinates for area:", area.id);
-                            return;
-                        }
-
-                        const latLng = area.coordinates[0]; // Assuming coordinates is an array of objects with lat and lng
-                        const radius = area.radius || 500; // Default radius if not provided
-
-                        // Determine the business and institution types
-                        let businessType = area.missing_businesses && area.missing_businesses.length > 0
-                            ? area.missing_businesses[0]
-                            : null;
-
-                        let institutionType = area.missing_institutions && area.missing_institutions.length > 0
-                            ? area.missing_institutions[0]
-                            : null;
-
-                        let color = "blue"; // Default color
-                        if (businessType) {
-                            color = getColorForBusinessType(businessType);
-                        } else if (institutionType) {
-                            color = getColorForInstitutionType(institutionType);
-                        }
-
-                        console.log(`Drawing circle at (${latLng.lat}, ${latLng.lng}) with radius ${radius} and color ${color}`);
-
-                        // Create the circle and add a click event listener
-                        const circle = L.circle([latLng.lat, latLng.lng], {
-                            color: color,
-                            radius: radius
-                        }).addTo(map);
-
-                        // Add click event listener to the circle
-                        circle.on('click', () => {
-                            displayAreaDetails(area);  // Call the function to display the details of the clicked area
-                        });
-                    });
-                })
-                .catch(error => console.error("Error fetching or displaying areas:", error));
-        }
