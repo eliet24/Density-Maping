@@ -21,6 +21,7 @@ class Location(BaseModel):
     longitude: float
     name: str
     location_type: str
+    project_code: str
 
 # SQLite Database Initialization
 DATABASE_FILE = "locations.db"
@@ -34,22 +35,25 @@ def init_db():
             latitude REAL NOT NULL,
             longitude REAL NOT NULL,
             name TEXT NOT NULL,
-            location_type TEXT NOT NULL
+            location_type TEXT NOT NULL,
+            project_code TEXT NOT NULL
         )
     """)
     conn.commit()
     conn.close()
 
+
 init_db()
 
 @app.post("/save_location/")
 async def save_location(location: Location):
+    print(location)  # This will print the data received
     try:
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO locations (latitude, longitude, name, location_type) VALUES (?, ?, ?, ?)",
-            (location.latitude, location.longitude, location.name, location.location_type)
+            "INSERT INTO locations (latitude, longitude, name, location_type, project_code) VALUES (?, ?, ?, ?, ?)",
+            (location.latitude, location.longitude, location.name, location.location_type, location.project_code)
         )
         conn.commit()
         conn.close()

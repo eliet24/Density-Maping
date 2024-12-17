@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4285F4;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #357ae8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>פרטי הפרויקט</h2>
+        <form id="project-form">
+            <input type="text" id="project-name" placeholder="שם הפרויקט" required>
+            <input type="text" id="project-address" placeholder="כתובת הפרויקט" required>
+            <input type="text" id="project-code" placeholder="קוד פרוייקט" required>
+            <button type="submit">המשך</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('project-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const projectName = document.getElementById('project-name').value;
+            const projectAddress = document.getElementById('project-address').value;
+            const projectCode = document.getElementById('project-code').value;
+
+            if (projectName && projectCode) {
+                // Store the project data in sessionStorage
+                sessionStorage.setItem('projectName', projectName);
+                sessionStorage.setItem('projectAddress', projectAddress);
+                sessionStorage.setItem('projectCode', projectCode);
+
+                // Redirect to the map page
+                window.location.href = "index.html";
+            } else {
+                alert("אנא מלא את כל השדות.");
+            }
+        });
+    </script>
+</body>
+</html>

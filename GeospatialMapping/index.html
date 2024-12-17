@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Maps with Questions</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY&libraries=places&callback=initMap"></script>
+
     <style>
         body { margin: 0; font-family: Arial, sans-serif; }
         #question-container {
@@ -89,7 +90,11 @@
         let searchBox;
         let selectedCoordinates = { latitude: null, longitude: null, name: null };
 
+        let projectCode = sessionStorage.getItem('projectCode'); // Get project code from sessionStorage
+
         function initMap() {
+            console.log("Initializing map...");
+
             // Initialize the map
             map = new google.maps.Map(document.getElementById("map"), {
                 center: { lat: 31.7683, lng: 35.2137 }, // Default center
@@ -172,12 +177,13 @@
                 );
             });
 
-
-
+            // Debugging: Check if projectCode is being set properly
+            console.log("Project Code:", projectCode);
 
             document.getElementById("approve-btn").addEventListener("click", approvePoint);
             updateQuestion();
         }
+
 
         function updateQuestion() {
             if (currentQuestionIndex < questions.length) {
@@ -216,21 +222,40 @@
                     latitude: selectedCoordinates.latitude,
                     longitude: selectedCoordinates.longitude,
                     name: selectedCoordinates.name,
-                    location_type: currentQuestion.key
+                    location_type: currentQuestion.key,
+                    project_code: projectCode
                 }),
+
+
             })
             .then(response => response.json())
             .then(data => {
                 console.log("Saved:", data);
                 alert(`Location for "${currentQuestion.text}" saved.`);
+
+                // Move to the next question
                 currentQuestionIndex++;
-                selectedCoordinates = { latitude: null, longitude: null, name: null }; // Reset
+
+                // Reset selected coordinates
+                selectedCoordinates = { latitude: null, longitude: null, name: null };
+
+                // Update the question
                 updateQuestion();
             })
-            .catch(error => console.error("Error saving data:", error));
+            .catch(error => {
+                console.error("Error saving data:", error);
+                alert("There was an error saving the location.");
+            });
         }
 
-        window.onload = initMap;
+        window.onload = function() {
+            if (projectCode) {
+                initMap();
+            } else {
+                // Redirect to registration page if project code is missing
+                window.location.href = "project_registration.html";
+            }
+        };
     </script>
 </body>
 </html>
