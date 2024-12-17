@@ -3,448 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Maps with Search and Buttons</title>
+    <title>Google Maps with Questions</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY&libraries=places"></script>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #question-container {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f8f9fa;
+            z-index: 1;
         }
-
-        /* Main container for page content */
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Center all content horizontally */
-            justify-content: flex-start; /* Start from top */
-            height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
+        #map { height: 85vh; width: 100%; position: relative; }
+        #approve-btn {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            z-index: 2;
         }
-
-        /* Search Box */
         #search-box {
             position: absolute;
-            top: 20px;
-            right: 80px; /* Move to the top-right corner */
-            width: auto; /* Adjust width for better fit */
-            max-width: 250px; /* Ensure it doesn’t get too large */
-            min-width: 150px; /* Set a minimum width */
-            background: #fff;
+            top: 10px;
+            right: 10px;
+            z-index: 2;
+            background-color: white;
+            padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            padding: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            font-size: 14px; /* Adjust text size for mobile */
-            text-align: right; /* Align the text to the right */
         }
-
-        /* Style for Google Map container */
-        #map {
-            height: 100%;
-            width: 100%;
-            max-width: 1500px; /* Limit maximum width */
-            margin-bottom: 0px; /* Space between map and buttons */
-        }
-
-        /* Container for the buttons */
-        .button-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px; /* Space between buttons */
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        /* Buttons Row container */
-        .button-row {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;  /* Center buttons horizontally */
-            gap: 10px;
-            max-width: 100%;
-            overflow-x: auto;
-        }
-
-        /* Style for each button */
-        .button-row button {
-            padding: 10px 20px;
+        #search-box input {
+            width: 300px;
+            height: 30px;
+            padding: 5px;
             font-size: 14px;
-            border: 1px solid #ccc;
-            background-color: #f5f5f5;
-            border-radius: 5px;
-            cursor: pointer;
-            white-space: nowrap;
-            min-width: 120px;
-        }
-
-        .button-row button:hover {
-            background-color: #ddd;
-        }
-
-        /* Initially hide all category buttons */
-        .category-buttons {
-            display: none;
-            width: 100%;
-            text-align: center;
-        }
-
-        /* Media Queries for Mobile Devices */
-        @media (max-width: 480px) {
-            .button-row button {
-                font-size: 10px;
-                padding: 6px 12px; /* Even smaller padding on small screens */
-            }
-        }
-
-        @media (max-width: 768px) {
-            #search-bar {
-                max-width: 200px; /* Adjust width for smaller screens */
-                font-size: 12px;
-            }
-
-            #search-box {
-                width: 100%; /* Full width for very small screens */
-            }
-
-            .button-row {
-                gap: 8px; /* Reduced gap for very small screens */
-            }
         }
     </style>
 </head>
 <body>
+    <!-- Question Container -->
+    <div id="question-container">Loading...</div>
 
-
-    <!-- Main Container for everything -->
-    <div class="main-container">
-
-        <!-- Search Box -->
-        <input id="search-box" class="controls" type="text" placeholder="Google חיפוש במפות ">
-
-        <!-- Google Map -->
-        <div id="map"></div>
-
-        <!-- New Buttons Container -->
-        <div class="button-container">
-            <div class="button-row">
-                <!-- New Category Buttons -->
-                <button onclick="toggleCategory('education')">חינוך</button>
-                <button onclick="toggleCategory('community')">קהילה</button>
-                <button onclick="toggleCategory('health')">בריאות</button>
-                <button onclick="toggleCategory('religion')">דת</button>
-                <button onclick="toggleCategory('consumption')">צריכה</button>
-                <button onclick="toggleCategory('workplace')">מקום עבודה</button>
-            </div>
-        </div>
-
-        <!-- Category Buttons Containers -->
-        <div class="button-container">
-            <!-- Education Category -->
-            <div id="education" class="category-buttons" style="display: none;">
-                <div class="button-row">
-                    <button onclick="setLocationType('גן ילדים')">גן ילדים</button>
-                    <button onclick="setLocationType('מעון')">מעון</button>
-                    <button onclick="setLocationType('בית ספר יסודי')">בית ספר יסודי</button>
-                    <button onclick="setLocationType('בית ספר על יסודי')">בית ספר על יסודי</button>
-                    <button onclick="setLocationType('מכללה')">מכללה</button>
-                    <button onclick="setLocationType('אוניברסיטה')">אוניברסיטה</button>
-                    <button onclick="setLocationType('ישיבה')">ישיבה</button>
-                    <button onclick="setLocationType('בית מדרש')">בית מדרש</button>
-                    <button onclick="setLocationType('חוגים')">חוגים</button>
-                    <button onclick="setLocationType('קורסים')">קורסים</button>
-                    <button onclick="setLocationType('שיעור פרטי')">שיעור פרטי</button>
-                    <button onclick="setLocationType('מתנס')">מתנס</button>
-                    <button onclick="setLocationType('מועדון נוער')">מועדון נוער</button>
-                    <button onclick="setLocationType('תנועת נוער')">תנועת נוער</button>
-                </div>
-            </div>
-
-            <!-- Community Category -->
-            <div id="community" class="category-buttons" style="display: none;">
-                <div class="button-row">
-                    <button onclick="setLocationType('מתנס')">מתנס</button>
-                    <button onclick="setLocationType('מועדון נוער')">מועדון נוער</button>
-                    <button onclick="setLocationType('תנועת נוער')">תנועת נוער</button>
-                </div>
-            </div>
-
-            <!-- Health Category -->
-            <div id="health" class="category-buttons" style="display: none;">
-                <div class="button-row">
-                    <button onclick="setLocationType('קופת חולים')">קופת חולים</button>
-                    <button onclick="setLocationType('בית חולים')">בית חולים</button>
-                    <button onclick="setLocationType('תחנת בריאות המשפחה')">תחנת בריאות המשפחה</button>
-                </div>
-            </div>
-
-            <!-- Religion Category -->
-            <div id="religion" class="category-buttons" style="display: none;">
-                <div class="button-row">
-                    <button onclick="setLocationType('בית כנסת')">בית כנסת</button>
-                </div>
-            </div>
-
-            <!-- Consumption Category -->
-            <div id="consumption" class="category-buttons" style="display: none;">
-                <div class="button-row">
-                    <button onclick="setLocationType('מזון')">מזון</button>
-                    <button onclick="setLocationType('הסעדה')">הסעדה</button>
-                    <button onclick="setLocationType('תרבות ופנאי')">תרבות ופנאי</button>
-                    <button onclick="setLocationType('ביגוד')">ביגוד</button>
-                    <button onclick="setLocationType('לבית')">לבית</button>
-                </div>
-            </div>
-
-            <!-- Workplace Category -->
-            <div id="workplace" class="category-buttons" style="display: none;">
-                <div class="button-row">
-                    <button onclick="setLocationType('מקום עבודה')">מקום עבודה</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Save Location Button -->
-        <button id="save-location" onclick="saveLocation()">Save Location</button>
+    <!-- Search Box -->
+    <div id="search-box">
+        <input id="pac-input" type="text" placeholder="Search for a location">
     </div>
 
-    <!-- Google Maps API Script -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY&libraries=places&callback=initMap" async defer></script>
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Approve Button -->
+    <button id="approve-btn">Approve Point</button>
 
     <script>
-        let map;
-        let marker = null;
-        let selectedMainCategory = null;
-        let selectedSubCategory = null;
-        let autocomplete;
+        const questions = [
+            { key: "FOOD", text: "איפה אתם עושים קניות של מוצרי מזון?" },
+            { key: "FASHION", text: "איפה אתם קונים בגדים?" },
+            { key: "NIGHTLIFE_AND_FUN", text: "איפה אתם יוצאים לבלות?" },
+            { key: "KINDERGARTEN", text: "איפה הגן ילדים?" },
+            { key: "SCHOOL", text: "איפה הבית ספר?" },
+            { key: "RELIGION", text: "איפה הבית כנסת?" }
+        ];
 
-        // Initialize Google Map
+        let currentQuestionIndex = 0;
+        let map, marker = null;
+        let searchBox;
+        let selectedCoordinates = { latitude: null, longitude: null, name: null };
+
         function initMap() {
-            const defaultLocation = { lat: 31.771959, lng: 35.217018 }; //  Israel
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: defaultLocation,
-                zoom: 8,
+            // Initialize the map
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 31.7683, lng: 35.2137 }, // Default center
+                zoom: 8
             });
 
-            // Create a marker
+            // Attach the search box
+            const input = document.getElementById("pac-input");
+            searchBox = new google.maps.places.SearchBox(input);
+
+            // Bias the SearchBox results towards the current map view
+            map.addListener("bounds_changed", () => {
+                searchBox.setBounds(map.getBounds());
+            });
+
+            // Listen for search results
+            searchBox.addListener("places_changed", () => {
+                const places = searchBox.getPlaces();
+                if (places.length === 0) return;
+
+                // Clear old marker
+                if (marker) marker.setMap(null);
+
+                const place = places[0];
+
+                // Set the marker at the selected place
+                marker = new google.maps.Marker({
+                    map,
+                    position: place.geometry.location
+                });
+
+                // Update the map to zoom and center on the place
+                map.panTo(place.geometry.location);
+                map.setZoom(15);
+
+                // Store selected coordinates and name
+                selectedCoordinates.latitude = place.geometry.location.lat();
+                selectedCoordinates.longitude = place.geometry.location.lng();
+                selectedCoordinates.name = place.name || "Unnamed Location";
+            });
+
+            // Listen for map clicks
+            map.addListener("click", (event) => {
+                const customName = prompt("Enter a name for this location:");
+                if (customName) {
+                    placeMarker(event.latLng, customName);
+                }
+            });
+
+            document.getElementById("approve-btn").addEventListener("click", approvePoint);
+            updateQuestion();
+        }
+
+        function updateQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                document.getElementById("question-container").innerText = questions[currentQuestionIndex].text;
+            } else {
+                document.getElementById("question-container").innerText = "Thank You";
+                document.getElementById("approve-btn").style.display = "none";
+            }
+        }
+
+        function placeMarker(location, name) {
+            if (marker) marker.setMap(null);
+
             marker = new google.maps.Marker({
-                map: map,
-                position: defaultLocation,
-                title: 'Selected Location',
+                position: location,
+                map: map
             });
 
-            // Set up the Places Autocomplete for the search box
-            autocomplete = new google.maps.places.Autocomplete(document.getElementById('search-box'));
-            autocomplete.setFields(['address_component', 'geometry']);
-
-            // Listen for the place selection
-            autocomplete.addListener('place_changed', onPlaceChanged);
-
-            // Listen for map clicks to select a location
-            map.addListener('click', function(event) {
-                const lat = event.latLng.lat();
-                const lng = event.latLng.lng();
-                selectedLocation = { latitude: lat, longitude: lng };
-
-                // Place a marker on the clicked location
-                marker.setPosition(event.latLng);
-            });
-                // Add click listener to map
-            map.addListener('click', function(e) {
-                if (selectedSubCategory) {
-                    // Remove existing marker if any
-                    if (marker) {
-                        marker.setMap(null);
-                    }
-
-                    // Place new marker
-                    marker = new google.maps.Marker({
-                        position: e.latLng,
-                        map: map
-                    });
-                } else {
-                    alert('נא לבחור קטגוריה תחילה');
-                }
-            });
+            selectedCoordinates.latitude = location.lat();
+            selectedCoordinates.longitude = location.lng();
+            selectedCoordinates.name = name;
         }
 
-        // Function to reset button styles
-        function resetButtonStyles(containerSelector) {
-            const buttons = document.querySelectorAll(`${containerSelector} .button-row button`);
-            buttons.forEach(button => {
-                button.classList.remove('selected');
-            });
-        }
-
-
-        // Callback function when a place is selected
-        function onPlaceChanged() {
-            const place = autocomplete.getPlace();
-
-            if (!place.geometry) {
-                console.log('Place details not available.');
+        function approvePoint() {
+            if (!selectedCoordinates.latitude || !selectedCoordinates.longitude || !selectedCoordinates.name) {
+                alert("Please select a point and provide a name.");
                 return;
             }
 
-            selectedLocation = {
-                latitude: place.geometry.location.lat(),
-                longitude: place.geometry.location.lng(),
-            };
+            const currentQuestion = questions[currentQuestionIndex];
 
-            marker.setPosition(place.geometry.location);
-            map.setCenter(place.geometry.location);
-            map.setZoom(15);
+            fetch("http://127.0.0.1:8000/save_location/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    latitude: selectedCoordinates.latitude,
+                    longitude: selectedCoordinates.longitude,
+                    name: selectedCoordinates.name,
+                    location_type: currentQuestion.key
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Saved:", data);
+                alert(`Location for "${currentQuestion.text}" saved.`);
+                currentQuestionIndex++;
+                selectedCoordinates = { latitude: null, longitude: null, name: null }; // Reset
+                updateQuestion();
+            })
+            .catch(error => console.error("Error saving data:", error));
         }
 
-
-        // Toggle category button visibility
-        function toggleCategory(category) {
-            const allCategories = document.querySelectorAll('.category-buttons');
-            allCategories.forEach(cat => {
-                cat.style.display = cat.id === category ? 'block' : 'none';
-            });
-        }
-
-
-        // Main category buttons
-        const mainCategories = {
-            'חינוך': 'education',
-            'קהילה': 'community',
-            'בריאות': 'health',
-            'דת': 'religion',
-            'צריכה': 'consumption',
-            'מקום עבודה': 'workplace'
-        };
-
-        // Handle main category button clicks
-        document.querySelectorAll('.main-container .button-row button').forEach(button => {
-            button.addEventListener('click', function() {
-                // Reset all main category buttons
-                resetButtonStyles('.main-container');
-
-                // Hide all subcategory containers
-                document.querySelectorAll('.category-buttons').forEach(container => {
-                    container.style.display = 'none';
-                });
-
-                // Get the English category ID from the Hebrew text
-                const hebrewCategory = this.textContent.trim();
-                const categoryId = mainCategories[hebrewCategory];
-
-                // Show selected category's buttons
-                const subCategoryContainer = document.getElementById(categoryId);
-                if (subCategoryContainer) {
-                    subCategoryContainer.style.display = 'block';
-                }
-
-                // Highlight selected main category
-                this.classList.add('selected');
-                selectedMainCategory = categoryId;
-                selectedSubCategory = null; // Reset subcategory selection
-            });
-        });
-
-        // Handle subcategory button clicks
-        document.querySelectorAll('.category-buttons .button-row button').forEach(button => {
-            button.addEventListener('click', function() {
-                // Reset all subcategory buttons in the current category
-                resetButtonStyles(`#${selectedMainCategory}`);
-
-                // Highlight selected subcategory
-                this.classList.add('selected');
-                selectedSubCategory = this.textContent.trim();
-            });
-        });
-
-        // Handle save location button click
-        document.querySelector('button:contains("Save Location")').addEventListener('click', async function() {
-            if (!marker || !selectedSubCategory) {
-                alert('נא לבחור מיקום וקטגוריה');
-                return;
-            }
-
-            try {
-                // Get the category ID from the backend based on the selected subcategory name
-                const categoriesResponse = await fetch('/categories/');
-                const categories = await categoriesResponse.json();
-                const selectedCategoryData = categories.find(cat => cat.name === selectedSubCategory);
-
-                if (!selectedCategoryData) {
-                    throw new Error('הקטגוריה לא נמצאה');
-                }
-
-                // Prepare location data
-                const locationData = {
-                    user_id: 1, // Replace with actual user ID from your authentication system
-                    category_id: selectedCategoryData.category_id,
-                    latitude: marker.getPosition().lat(),
-                    longitude: marker.getPosition().lng()
-                };
-
-                // Save location to database
-                const response = await fetch('/locations/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(locationData)
-                });
-
-                if (!response.ok) {
-                    throw new Error('שגיאה בשמירת המיקום');
-                }
-
-                // Clear selection after successful save
-                marker.setMap(null);
-                marker = null;
-                resetButtonStyles('.main-container');
-                resetButtonStyles('.category-buttons');
-                document.querySelectorAll('.category-buttons').forEach(container => {
-                    container.style.display = 'none';
-                });
-                selectedMainCategory = null;
-                selectedSubCategory = null;
-
-                alert('המיקום נשמר בהצלחה!');
-            } catch (error) {
-                console.error('Error saving location:', error);
-                alert('שגיאה בשמירת המיקום. נא לנסות שוב.');
-            }
-        });
-
-        // Add styles for selected buttons
-        const style = document.createElement('style');
-        style.textContent = `
-            .button-row button {
-                padding: 10px 20px;
-                margin: 5px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-
-            .button-row button.selected {
-                background-color: #4CAF50;
-                color: white;
-            }
-
-            .category-buttons .button-row button.selected {
-                background-color: #2196F3;
-                color: white;
-            }
-
-            #map {
-                height: 500px;
-                width: 100%;
-                margin-bottom: 20px;
-            }
-        `;
-        document.head.appendChild(style);
+        window.onload = initMap;
     </script>
-
 </body>
 </html>

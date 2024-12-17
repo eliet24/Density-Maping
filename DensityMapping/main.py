@@ -77,7 +77,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Get the current directory where main.py is located
+# Get the current directory where main_old.py is located
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the path to the FastAPI_app directory
@@ -248,13 +248,13 @@ async def get_user_areas(current_user: dict = Depends(get_current_user)):
     return await database.fetch_all(query)
 
 
-# Serve index.html (for the frontend)
+# Serve index_old.html (for the frontend)
 @app.get("/")
 async def read_index():
-    index_path = os.path.join(fastapi_app_dir, "index.html")
+    index_path = os.path.join(fastapi_app_dir, "index_old.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
-    raise HTTPException(status_code=404, detail=f"index.html not found at {index_path}")
+    raise HTTPException(status_code=404, detail=f"index_old.html not found at {index_path}")
 
 
 @app.post("/debug/users/")
