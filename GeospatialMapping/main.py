@@ -1,10 +1,13 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import sqlite3
+from starlette.responses import FileResponse
 
 app = FastAPI(debug=True)  # Enable debug mode for better error details
+app.mount("/static", StaticFiles(directory="."), name="static")  # Serve static files under /static
 
 # Enable CORS Middleware
 app.add_middleware(
@@ -59,6 +62,17 @@ def init_db():
 
 init_db()
 
+# Serve the index.html at the root route
+@app.get("/")
+async def serve_index():
+    """Serve the index.html file."""
+    return FileResponse("index.html")
+
+# Serve the index.html file directly for the root URL
+@app.get("/")
+async def root():
+    return FileResponse("index.html")
+
 @app.post("/save_location/")
 async def save_location(location: Location):
     """Save location data to the locations table."""
@@ -107,3 +121,6 @@ async def get_latest_project_code():
             return {"error": "No project found"}
     except Exception as e:
         return {"detail": f"An error occurred: {str(e)}"}
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)

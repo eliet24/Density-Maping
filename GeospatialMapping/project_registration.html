@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Registration</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,7 +13,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             background-color: #f4f4f4;
         }
         .container {
@@ -40,9 +41,17 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-bottom: 20px;
         }
         button:hover {
             background-color: #357ae8;
+        }
+        #qrcode {
+            display: none;
+            margin: 20px auto;
+        }
+        #qrcode-container {
+            text-align: center;
         }
     </style>
 </head>
@@ -55,6 +64,9 @@
             <input type="text" id="project-code" placeholder="קוד פרוייקט" required>
             <button type="submit">המשך</button>
         </form>
+        <div id="qrcode-container">
+            <div id="qrcode"></div>
+        </div>
     </div>
 
     <script>
@@ -66,8 +78,8 @@
             const projectCode = document.getElementById('project-code').value;
 
             try {
-                // Send the project data to the backend
-                const response = await fetch('http://127.0.0.1:8000/save_project/', {
+                // const response = await fetch('http://127.0.0.1:8000/save_project/', {    // used for local host phone testing
+                 const response = await fetch('http://10.0.0.12:8000/save_project/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -80,7 +92,24 @@
                 const result = await response.json();
                 if (response.ok) {
                     alert(result.message);
-                    window.location.href = "index.html"; // Redirect to index.html
+
+                    // Clear existing QR code if any
+                    document.getElementById('qrcode').innerHTML = '';
+                    document.getElementById('qrcode').style.display = 'block';
+
+                    // Generate QR code for index.html
+                    const currentUrl = window.location.href;
+                    //const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+                    //const indexUrl = baseUrl + '/index.html';
+                    const baseUrl = `http://10.0.0.12:8000`;        // used for local host phone testing
+                    //const indexUrl = baseUrl + '/index.html';       // used for local host phone testing
+                    const indexUrl = baseUrl; // Root URL, no need to specify index.html
+
+                    new QRCode(document.getElementById('qrcode'), {
+                        text: indexUrl,
+                        width: 200,
+                        height: 200
+                    });
                 } else {
                     alert(result.detail || "Error saving project.");
                 }

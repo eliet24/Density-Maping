@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Maps with Questions</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY&libraries=places&callback=initMap"></script>
 
     <style>
         body { margin: 0; font-family: Arial, sans-serif; }
@@ -93,7 +92,7 @@
 
         async function fetchProjectCode() {
             try {
-                const response = await fetch('http://127.0.0.1:8000/get_latest_project_code/');
+                const response = await fetch('http://10.0.0.12:8000/get_latest_project_code/');
                 const data = await response.json();
 
                 if (data.error) {
@@ -111,6 +110,7 @@
             }
         }
 
+        /*
         function initMap() {
             console.log("Initializing map...");
 
@@ -160,6 +160,7 @@
 
             updateQuestion();
         }
+        */
 
         function updateQuestion() {
             if (currentQuestionIndex < questions.length) {
@@ -178,7 +179,7 @@
 
             const currentQuestion = questions[currentQuestionIndex];
 
-            fetch("http://127.0.0.1:8000/save_location/", {
+            fetch("http://10.0.0.12:8000/save_location/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -210,7 +211,61 @@
         }
 
         // Fetch the latest project code and initialize map
-        window.onload = fetchProjectCode;
+        // window.onload = fetchProjectCode;
+        document.addEventListener('DOMContentLoaded', fetchProjectCode);
+
+        // Add async to initMap
+        async function initMap() {
+            console.log("Initializing map...");
+
+            // Initialize the map
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 31.7683, lng: 35.2137 }, // Default center
+                zoom: 8
+            });
+
+            // Attach the search box
+            const input = document.getElementById("pac-input");
+            searchBox = new google.maps.places.SearchBox(input);
+
+            // Bias the SearchBox results towards the current map view
+            map.addListener("bounds_changed", () => {
+                searchBox.setBounds(map.getBounds());
+            });
+
+            // Listen for search results
+            searchBox.addListener("places_changed", () => {
+                const places = searchBox.getPlaces();
+                if (places.length === 0) return;
+
+                // Clear old marker
+                if (marker) marker.setMap(null);
+
+                const place = places[0];
+
+                // Set the marker at the selected place
+                marker = new google.maps.Marker({
+                    map,
+                    position: place.geometry.location
+                });
+
+                // Update the map to zoom and center on the place
+                map.panTo(place.geometry.location);
+                map.setZoom(15);
+
+                // Store selected coordinates and name
+                selectedCoordinates.latitude = place.geometry.location.lat();
+                selectedCoordinates.longitude = place.geometry.location.lng();
+                selectedCoordinates.name = place.name || "Unnamed Location";
+            });
+
+            // Add event listener for approve button
+            document.getElementById("approve-btn").addEventListener("click", approvePoint);
+
+            updateQuestion();
+        }
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY&libraries=places&callback=initMap"></script>
+
 </body>
 </html>
