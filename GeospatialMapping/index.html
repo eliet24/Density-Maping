@@ -18,14 +18,14 @@
         #map { height: 85vh; width: 100%; position: relative; }
         #approve-btn {
             position: absolute;
-            bottom: 10px;
-            left: 50%;
+            bottom: 3px;
+            left: 52%;
             transform: translateX(-50%);
-            background-color: #00FF00;
+            background-color: #00BFFF;
             color: black;
             border: none;
             padding: 10px 20px;
-            font-size: 16px;
+            font-size: 20px;
             cursor: pointer;
             border-radius: 5px;
             z-index: 2;
@@ -33,7 +33,7 @@
         #search-box {
             position: absolute;
             top: 50px;
-            right: 70px;
+            right: 0px;
             z-index: 10;
             background-color: white;
             padding: 10px;
@@ -47,9 +47,9 @@
         #search-box input {
             border: none;
             outline: none;
-            padding: 5px 10px;
-            font-size: 14px;
-            width: 250px;
+            padding: 2px 10px;
+            font-size: 17px;
+            width: 180px;
             font-family: Arial, sans-serif;
             border-radius: 20px;
         }
@@ -90,19 +90,14 @@
         let selectedCoordinates = { latitude: null, longitude: null, name: null };
         let projectCode = null; // Initialize as null
 
+
         async function fetchProjectCode() {
             try {
-                const response = await fetch('http://10.0.0.12:8000/get_latest_project_code/');
-                const data = await response.json();
-
-                if (data.error) {
-                    alert("Error: No project found. Please contact the administrator.");
-                    throw new Error("No project found");
+                projectCode = getQueryParameter('projectCode');
+                if (!projectCode) {
+                    alert("Error: Missing project code. Please contact the administrator.");
+                    throw new Error("Missing project code in URL");
                 }
-
-                projectCode = data.project_code;
-                console.log("Fetched Project Code:", projectCode);
-
                 // Initialize the map after fetching project code
                 initMap();
             } catch (error) {
@@ -110,57 +105,10 @@
             }
         }
 
-        /*
-        function initMap() {
-            console.log("Initializing map...");
-
-            // Initialize the map
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: 31.7683, lng: 35.2137 }, // Default center
-                zoom: 8
-            });
-
-            // Attach the search box
-            const input = document.getElementById("pac-input");
-            searchBox = new google.maps.places.SearchBox(input);
-
-            // Bias the SearchBox results towards the current map view
-            map.addListener("bounds_changed", () => {
-                searchBox.setBounds(map.getBounds());
-            });
-
-            // Listen for search results
-            searchBox.addListener("places_changed", () => {
-                const places = searchBox.getPlaces();
-                if (places.length === 0) return;
-
-                // Clear old marker
-                if (marker) marker.setMap(null);
-
-                const place = places[0];
-
-                // Set the marker at the selected place
-                marker = new google.maps.Marker({
-                    map,
-                    position: place.geometry.location
-                });
-
-                // Update the map to zoom and center on the place
-                map.panTo(place.geometry.location);
-                map.setZoom(15);
-
-                // Store selected coordinates and name
-                selectedCoordinates.latitude = place.geometry.location.lat();
-                selectedCoordinates.longitude = place.geometry.location.lng();
-                selectedCoordinates.name = place.name || "Unnamed Location";
-            });
-
-            // Add event listener for approve button
-            document.getElementById("approve-btn").addEventListener("click", approvePoint);
-
-            updateQuestion();
+        function getQueryParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
         }
-        */
 
         function updateQuestion() {
             if (currentQuestionIndex < questions.length) {
@@ -187,7 +135,7 @@
                     longitude: selectedCoordinates.longitude,
                     name: selectedCoordinates.name,
                     location_type: currentQuestion.key,
-                    project_code: projectCode // Use the fetched project code
+                    project_code: projectCode // Use projectCode from URL
                 }),
             })
             .then(response => response.json())
@@ -211,7 +159,6 @@
         }
 
         // Fetch the latest project code and initialize map
-        // window.onload = fetchProjectCode;
         document.addEventListener('DOMContentLoaded', fetchProjectCode);
 
         // Add async to initMap
@@ -264,8 +211,8 @@
 
             updateQuestion();
         }
+
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY&libraries=places&callback=initMap"></script>
-
 </body>
 </html>

@@ -101,9 +101,10 @@
                     const currentUrl = window.location.href;
                     //const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
                     //const indexUrl = baseUrl + '/index.html';
-                    const baseUrl = `http://10.0.0.12:8000`;        // used for local host phone testing
                     //const indexUrl = baseUrl + '/index.html';       // used for local host phone testing
-                    const indexUrl = baseUrl; // Root URL, no need to specify index.html
+                    //const indexUrl = baseUrl; // Root URL, no need to specify index.html
+                    const baseUrl = `http://10.0.0.12:8000`;        // used for local host phone testing
+                    const indexUrl = `${baseUrl}/?projectCode=${encodeURIComponent(projectCode)}`; // Add projectCode as query param
 
                     new QRCode(document.getElementById('qrcode'), {
                         text: indexUrl,
