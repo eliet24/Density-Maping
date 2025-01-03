@@ -24,7 +24,7 @@
             text-align: center;
         }
         input {
-            width: 100%;
+            width: 80%;
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
@@ -58,23 +58,35 @@
     </div>
 
     <script>
-        document.getElementById('project-form').addEventListener('submit', function(event) {
+        document.getElementById('project-form').addEventListener('submit', async function(event) {
             event.preventDefault();
 
             const projectName = document.getElementById('project-name').value;
             const projectAddress = document.getElementById('project-address').value;
             const projectCode = document.getElementById('project-code').value;
 
-            if (projectName && projectCode) {
-                // Store the project data in sessionStorage
-                sessionStorage.setItem('projectName', projectName);
-                sessionStorage.setItem('projectAddress', projectAddress);
-                sessionStorage.setItem('projectCode', projectCode);
+            try {
+                // Send the project data to the backend
+                const response = await fetch('http://127.0.0.1:8000/save_project/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: projectName,
+                        address: projectAddress,
+                        code: projectCode
+                    })
+                });
 
-                // Redirect to the map page
-                window.location.href = "index.html";
-            } else {
-                alert("אנא מלא את כל השדות.");
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    window.location.href = "index.html"; // Redirect to index.html
+                } else {
+                    alert(result.detail || "Error saving project.");
+                }
+            } catch (error) {
+                alert("An error occurred while saving the project.");
+                console.error(error);
             }
         });
     </script>

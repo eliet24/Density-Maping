@@ -89,8 +89,27 @@
         let map, marker = null;
         let searchBox;
         let selectedCoordinates = { latitude: null, longitude: null, name: null };
+        let projectCode = null; // Initialize as null
 
-        let projectCode = sessionStorage.getItem('projectCode'); // Get project code from sessionStorage
+        async function fetchProjectCode() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/get_latest_project_code/');
+                const data = await response.json();
+
+                if (data.error) {
+                    alert("Error: No project found. Please contact the administrator.");
+                    throw new Error("No project found");
+                }
+
+                projectCode = data.project_code;
+                console.log("Fetched Project Code:", projectCode);
+
+                // Initialize the map after fetching project code
+                initMap();
+            } catch (error) {
+                console.error("Error fetching project code:", error);
+            }
+        }
 
         function initMap() {
             console.log("Initializing map...");
@@ -136,54 +155,11 @@
                 selectedCoordinates.name = place.name || "Unnamed Location";
             });
 
-            // Listen for map clicks
-            map.addListener("click", (event) => {
-                const placesService = new google.maps.places.PlacesService(map);
-
-                // Search for nearby places
-                placesService.nearbySearch(
-                    { location: event.latLng, radius: 10 }, // Search nearby locations within a 10m radius
-                    (results, status) => {
-                        if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                            const place = results[0]; // Get the nearest place
-
-                            // Fetch full place details
-                            placesService.getDetails(
-                                { placeId: place.place_id },
-                                (placeDetails, detailsStatus) => {
-                                    if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
-                                        // Get the business name
-                                        const businessName = placeDetails.name || "Unnamed Business";
-                                        const formattedAddress = placeDetails.formatted_address || "Address not available";
-
-                                        // Combine the business name and full address
-                                        const fullAddress = `${businessName}, ${formattedAddress}`;
-
-                                        placeMarker(event.latLng, fullAddress); // Save as the name
-                                    } else {
-                                        // Fallback if details retrieval fails
-                                        placeMarker(event.latLng, "Unnamed Business");
-                                    }
-                                }
-                            );
-                        } else {
-                            // If no place is found, prompt user to enter a name
-                            const customName = prompt("Enter a name for this location:");
-                            if (customName) {
-                                placeMarker(event.latLng, customName);
-                            }
-                        }
-                    }
-                );
-            });
-
-            // Debugging: Check if projectCode is being set properly
-            console.log("Project Code:", projectCode);
-
+            // Add event listener for approve button
             document.getElementById("approve-btn").addEventListener("click", approvePoint);
+
             updateQuestion();
         }
-
 
         function updateQuestion() {
             if (currentQuestionIndex < questions.length) {
@@ -192,19 +168,6 @@
                 document.getElementById("question-container").innerText = "Thank You";
                 document.getElementById("approve-btn").style.display = "none";
             }
-        }
-
-        function placeMarker(location, name) {
-            if (marker) marker.setMap(null);
-
-            marker = new google.maps.Marker({
-                position: location,
-                map: map
-            });
-
-            selectedCoordinates.latitude = location.lat();
-            selectedCoordinates.longitude = location.lng();
-            selectedCoordinates.name = name;
         }
 
         function approvePoint() {
@@ -223,10 +186,8 @@
                     longitude: selectedCoordinates.longitude,
                     name: selectedCoordinates.name,
                     location_type: currentQuestion.key,
-                    project_code: projectCode
+                    project_code: projectCode // Use the fetched project code
                 }),
-
-
             })
             .then(response => response.json())
             .then(data => {
@@ -248,14 +209,8 @@
             });
         }
 
-        window.onload = function() {
-            if (projectCode) {
-                initMap();
-            } else {
-                // Redirect to registration page if project code is missing
-                window.location.href = "project_registration.html";
-            }
-        };
+        // Fetch the latest project code and initialize map
+        window.onload = fetchProjectCode;
     </script>
 </body>
 </html>
