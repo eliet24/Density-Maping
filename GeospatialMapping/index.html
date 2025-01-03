@@ -119,6 +119,44 @@
             }
         }
 
+        function setMarkerAtLocation(location, name = "Selected Location") {
+            // Clear existing marker if any
+            if (marker) {
+                marker.setMap(null);
+            }
+
+            // Create new marker
+            marker = new google.maps.Marker({
+                map: map,
+                position: location
+            });
+
+            // Update selected coordinates
+            selectedCoordinates.latitude = location.lat();
+            selectedCoordinates.longitude = location.lng();
+            selectedCoordinates.name = name;
+
+            // Center map on new location
+            map.panTo(location);
+        }
+
+        function handleMapClick(event) {
+            const clickedLocation = event.latLng;
+
+            // Reverse geocode the clicked location
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location: clickedLocation }, (results, status) => {
+                if (status === "OK" && results[0]) {
+                    // Use the formatted address as the location name
+                    const locationName = results[0].formatted_address;
+                    setMarkerAtLocation(clickedLocation, locationName);
+                } else {
+                    // If geocoding fails, use default name
+                    setMarkerAtLocation(clickedLocation);
+                }
+            });
+        }
+
         function approvePoint() {
             if (!selectedCoordinates.latitude || !selectedCoordinates.longitude || !selectedCoordinates.name) {
                 alert("Please select a point and provide a name.");
@@ -151,6 +189,13 @@
 
                 // Update the question
                 updateQuestion();
+                // Clear the marker after saving
+                if (marker) {
+                    marker.setMap(null);
+                    marker = null;
+                }
+                // Clear the search box input
+                document.getElementById('pac-input').value = '';
             })
             .catch(error => {
                 console.error("Error saving data:", error);
@@ -171,6 +216,9 @@
                 zoom: 8
             });
 
+            // Add click event listener to the map.
+            map.addListener("click", handleMapClick);
+
             // Attach the search box
             const input = document.getElementById("pac-input");
             searchBox = new google.maps.places.SearchBox(input);
@@ -190,11 +238,7 @@
 
                 const place = places[0];
 
-                // Set the marker at the selected place
-                marker = new google.maps.Marker({
-                    map,
-                    position: place.geometry.location
-                });
+                setMarkerAtLocation(place.geometry.location, place.name || "Searched Location");
 
                 // Update the map to zoom and center on the place
                 map.panTo(place.geometry.location);
