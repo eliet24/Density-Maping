@@ -88,7 +88,7 @@
             const projectCode = document.getElementById('project-code').value;
 
             try {
-                const response = await fetch('http://10.0.0.17:8000/save_project/', {
+                const response = await fetch("/save_location/",  {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -111,8 +111,8 @@
                     document.getElementById('qrcode').innerHTML = '';
 
                     // Generate larger QR code
-                    const baseUrl = `http://10.0.0.17:8000`;
-                    const indexUrl = `${baseUrl}/?projectCode=${encodeURIComponent(projectCode)}`;
+
+                    const indexUrl = `/?projectCode=${encodeURIComponent(projectCode)}`;
 
                     new QRCode(document.getElementById('qrcode'), {
                         text: indexUrl,

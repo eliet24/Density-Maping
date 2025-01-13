@@ -1,6 +1,5 @@
 fastapi          		# FastAPI framework
 uvicorn          		# ASGI server for running FastAPI
-sqlite3        		# SQLite database (built-in, doesn't need installation, but included here for completeness)
 python-dotenv    	# For environment variable management
 pydantic         		# For data validation (comes with FastAPI but explicitly listed for clarity)
 jinja2           		# Required for FastAPI templates if needed
