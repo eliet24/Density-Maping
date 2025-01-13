@@ -62,9 +62,8 @@ def init_db():
 
 init_db()
 
-# Serve the project_registration.html at the root route
 @app.get("/")
-async def serve_registration():
+async def serve_project_registration():
     """Serve the project_registration.html file."""
     return FileResponse("project_registration.html")
 
@@ -72,6 +71,7 @@ async def serve_registration():
 async def serve_index():
     """Serve the index.html file."""
     return FileResponse("index.html")
+
 
 
 # Serve the index.html file directly for the root URL

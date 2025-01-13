@@ -111,8 +111,8 @@
                     document.getElementById('qrcode').innerHTML = '';
 
                     // Use the Render.com base URL dynamically
-                    const baseUrl = window.location.origin; // Automatically gets the current domain (e.g., https://your-app.onrender.com)
-                    const indexUrl = `${baseUrl}/?projectCode=${encodeURIComponent(projectCode)}`;
+                    const baseUrl = window.location.origin; // Automatically gets the deployed domain
+                    const indexUrl = `${baseUrl}/index/?projectCode=${encodeURIComponent(projectCode)}`; // URL for index.html
 
                     new QRCode(document.getElementById('qrcode'), {
                         text: indexUrl,
