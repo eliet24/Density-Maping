@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import sqlite3
 from starlette.responses import FileResponse
+from fastapi.responses import FileResponse
 
 app = FastAPI(debug=True)  # Enable debug mode for better error details
 app.mount("/static", StaticFiles(directory="."), name="static")  # Serve static files under /static
@@ -72,6 +73,10 @@ async def serve_index():
     """Serve the index.html file."""
     return FileResponse("index.html")
 
+@app.get("/download_db/")
+async def download_db():
+    """Provide the SQLite database file for download."""
+    return FileResponse("locations.db", media_type="application/octet-stream", filename="locations.db")
 
 
 # Serve the index.html file directly for the root URL
