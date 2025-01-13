@@ -110,9 +110,9 @@
                     // Clear existing QR code if any
                     document.getElementById('qrcode').innerHTML = '';
 
-                    // Generate larger QR code
-
-                    const indexUrl = `/?projectCode=${encodeURIComponent(projectCode)}`;
+                    // Use the Render.com base URL dynamically
+                    const baseUrl = window.location.origin; // Automatically gets the current domain (e.g., https://your-app.onrender.com)
+                    const indexUrl = `${baseUrl}/?projectCode=${encodeURIComponent(projectCode)}`;
 
                     new QRCode(document.getElementById('qrcode'), {
                         text: indexUrl,
