@@ -88,7 +88,7 @@
             const projectCode = document.getElementById('project-code').value;
 
             try {
-                const response = await fetch("/save_location/",  {
+                const response = await fetch("/save_project/",  {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
