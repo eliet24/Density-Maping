@@ -217,7 +217,7 @@
         async function fetchProjectDetails(code) {
             try {
                 // Fetch project details from the backend
-                const response = await fetch(`/save_project/${code}`);
+                const response = await fetch(`/get_project/${code}`);
                 //const response = await fetch(`http://127.0.0.1:8000/get_project/${code}`);  //For Debug
                 if (!response.ok) throw new Error("Failed to fetch project details.");
                 return await response.json();
