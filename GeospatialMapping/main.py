@@ -1,4 +1,5 @@
 import uvicorn
+import random
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -62,6 +63,29 @@ def init_db():
     conn.close()
 
 init_db()
+
+
+@app.get("/generate_project_code/")
+async def generate_project_code():
+    """Generate a unique project code."""
+    try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+
+        # Fetch all existing codes
+        cursor.execute("SELECT code FROM projects")
+        existing_codes = {row[0] for row in cursor.fetchall()}
+        conn.close()
+
+        # Generate a random number between 1 and 999 that is not in existing codes
+        while True:
+            new_code = str(random.randint(1, 999)).zfill(3)  # Pad with zeros to maintain 3-digit format
+            if new_code not in existing_codes:
+                break
+
+        return {"project_code": new_code}
+    except Exception as e:
+        return {"detail": f"An error occurred: {str(e)}"}
 
 @app.get("/")
 async def serve_project_registration():
@@ -130,6 +154,23 @@ async def get_latest_project_code():
             return {"project_code": result[0]}
         else:
             return {"error": "No project found"}
+    except Exception as e:
+        return {"detail": f"An error occurred: {str(e)}"}
+
+@app.get("/get_project/{project_code}")
+async def get_project(project_code: str):
+    """Fetch project details by project code."""
+    try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, address, code FROM projects WHERE code = ?", (project_code,))
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            return {"name": row[0], "address": row[1], "code": row[2]}
+        else:
+            return {"error": "Project not found."}
     except Exception as e:
         return {"detail": f"An error occurred: {str(e)}"}
 

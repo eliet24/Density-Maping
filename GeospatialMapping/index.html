@@ -74,6 +74,8 @@
     <!-- Approve Button -->
     <button id="approve-btn"> הוספת המיקום</button>
 
+    <div class="error-message" id="error-message" style="display: none;"></div>
+
     <script>
         const questions = [
             { key: "FOOD", text: "?איפה אתם עושים קניות של מוצרי מזון" },
@@ -211,14 +213,58 @@
         // Fetch the latest project code and initialize map
         document.addEventListener('DOMContentLoaded', fetchProjectCode);
 
+
+        async function fetchProjectDetails(code) {
+            try {
+                // Fetch project details from the backend
+                const response = await fetch(`/save_project/${code}`);
+                //const response = await fetch(`http://127.0.0.1:8000/get_project/${code}`);  //For Debug
+                if (!response.ok) throw new Error("Failed to fetch project details.");
+                return await response.json();
+            } catch (error) {
+                console.error("Error fetching project details:", error);
+                document.getElementById("error-message").style.display = "block";
+                document.getElementById("error-message").textContent = "Failed to fetch project details. Please try again.";
+                return null;
+            }
+        }
+
+        async function geocodeAddress(address) {
+            try {
+                // Use the Google Geocoding API to get coordinates
+                const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY`);
+                const data = await response.json();
+                if (data.status === "OK" && data.results.length > 0) {
+                    return data.results[0].geometry.location; // { lat, lng }
+                } else {
+                    throw new Error(data.error_message || "Address not found.");
+                }
+            } catch (error) {
+                console.error("Error geocoding address:", error);
+                document.getElementById("error-message").style.display = "block";
+                document.getElementById("error-message").textContent = "Unable to locate the project address. Please check the details.";
+                return null;
+            }
+        }
+
+
         // Add async to initMap
         async function initMap() {
             console.log("Initializing map...");
 
+            // Fetch project details using the project code
+            const project = await fetchProjectDetails(projectCode);
+            if (!project || !project.address) return;
+
+            // Geocode the project address
+            const coordinates = await geocodeAddress(project.address);
+            if (!coordinates) return;
+
             // Initialize the map
             map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: 31.7683, lng: 35.2137 }, // Default center
-                zoom: 8
+                //center: { lat: 31.7683, lng: 35.2137 }, // Default center
+                center: coordinates,
+                zoom: 14
             });
 
             // Add click event listener to the map.
