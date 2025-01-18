@@ -118,6 +118,10 @@
             } else {
                 document.getElementById("question-container").innerText = "Thank You";
                 document.getElementById("approve-btn").style.display = "none";
+                 setTimeout(() => {
+                    // Close the page or redirect after a short delay
+                    window.close(); // Attempt to close the window
+                }, 2000); // Wait 2 seconds before closing
             }
         }
 
