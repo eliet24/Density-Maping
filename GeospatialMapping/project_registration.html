@@ -302,12 +302,6 @@
                 return;
             }
 
-            // Initialize the map if not already initialized
-            const map = new google.maps.Map(mapContainer, {
-                center: { lat: 31.7683, lng: 35.2137 }, // Default center in Jerusalem
-                zoom: 14
-            });
-
             let isPolling = this.getAttribute('data-polling') === 'true'; // Check current polling state
             let pollingInterval; // Variable to hold the interval ID
 
