@@ -145,6 +145,11 @@
     ">הצג תוצאות</button>
 
     <script>
+
+        let map; // Declare map globally to persist it across function calls
+        let markers = []; // Array to keep track of markers
+        let ProjectCoordinates = null;
+
         function initMap() {
             const map = new google.maps.Map(document.getElementById("map-container"), {
                 center: { lat: 31.7683, lng: 35.2137 }, // Centered in Jerusalem, Israel
@@ -189,6 +194,7 @@
 
             // Fetch the coordinates for the entered address
             const coordinates = await geocodeAddress(projectAddress);
+            ProjectCoordinates = coordinates;
             try {
                 // Send data to the backend
                 const response = await fetch("/save_project/",  {
@@ -302,11 +308,13 @@
                 return;
             }
 
-            // Initialize the map if not already initialized
-            const map = new google.maps.Map(mapContainer, {
-                center: { lat: 31.7683, lng: 35.2137 }, // Default center in Jerusalem
-                zoom: 14
-            });
+            // Initialize the map only once
+            if (!map) {
+                map = new google.maps.Map(mapContainer, {
+                    center: ProjectCoordinates, // Default center in Jerusalem
+                    zoom: 14
+                });
+            }
 
             let isPolling = this.getAttribute('data-polling') === 'true'; // Check current polling state
             let pollingInterval; // Variable to hold the interval ID
@@ -317,12 +325,17 @@
                     const data = await response.json();
 
                     if (response.ok && data.locations) {
+                        // Remove old markers from the map before adding new ones
+                        markers.forEach(marker => marker.setMap(null));
+                        markers = []; // Clear the markers array
+
                         data.locations.forEach(location => {
-                            new google.maps.Marker({
+                            const marker = new google.maps.Marker({
                                 position: { lat: location.latitude, lng: location.longitude },
                                 map: map,
                                 title: location.name
                             });
+                            markers.push(marker); // Add marker to the array
                         });
                     } else {
                         console.error("Error fetching locations:", data.detail || "Unknown error");
@@ -337,7 +350,7 @@
                 this.setAttribute('data-polling', 'true'); // Set polling state to true
                 this.textContent = "עצור תוצאות"; // Update button text
                 fetchAndUpdateMarkers(); // Fetch markers immediately
-                pollingInterval = setInterval(fetchAndUpdateMarkers, 5000); // Poll every 5 seconds
+                pollingInterval = setInterval(fetchAndUpdateMarkers, 3000); // Poll every 3 seconds
 
                 // Store interval ID in a data attribute
                 this.setAttribute('data-interval-id', pollingInterval);
@@ -350,7 +363,7 @@
                 const intervalId = parseInt(this.getAttribute('data-interval-id'), 10);
                 clearInterval(intervalId);
 
-                alert("קריאת התוצאות הופסקה!");
+                alert("Polling stopped.");
             }
         });
 
