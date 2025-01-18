@@ -65,6 +65,25 @@ def init_db():
 init_db()
 
 
+@app.get("/get_locations/{project_code}")
+async def get_locations(project_code: str):
+    """Fetch all locations associated with a project code."""
+    try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT latitude, longitude, name FROM locations WHERE project_code = ?",
+            (project_code,)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        locations = [{"latitude": row[0], "longitude": row[1], "name": row[2]} for row in rows]
+        return {"locations": locations}
+    except Exception as e:
+        return {"detail": f"An error occurred: {str(e)}"}
+
+
 @app.get("/generate_project_code/")
 async def generate_project_code():
     """Generate a unique project code."""

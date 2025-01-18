@@ -104,6 +104,7 @@
             background-color: #45a049; /* Darker green on hover */
         }
 
+
     </style>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY"></script>
 </head>
@@ -129,6 +130,19 @@
     </div>
 
     <div id="map-container"></div>
+    <button id="show-results-button" style="
+        display: block;
+        margin: 30px auto; /* Adjust margin to fit the smaller button */
+        padding: 7px 10px; /* Reduced padding for smaller button */
+        background-color: #4CAF50; /* Keep the same green color */
+        color: white; /* Text color */
+        border: none; /* Remove border */
+        border-radius: 4px; /* Slightly smaller border radius */
+        cursor: pointer; /* Keep pointer for hover effect */
+        font-size: 14px; /* Reduced font size */
+        text-align: center;
+        width: auto; /* Let the button size adjust to its content */
+    ">הצג תוצאות</button>
 
     <script>
         function initMap() {
@@ -272,6 +286,73 @@
             }
         });
 
+
+        // Add event listener to the "הצג תוצאות" button
+        document.getElementById('show-results-button').addEventListener('click', function () {
+            const projectCode = document.getElementById('project-code').value;
+
+            if (!projectCode) {
+                alert("Please enter a valid project code.");
+                return;
+            }
+
+            const mapContainer = document.getElementById("map-container");
+            if (!mapContainer) {
+                alert("Map container not found.");
+                return;
+            }
+
+            // Initialize the map if not already initialized
+            const map = new google.maps.Map(mapContainer, {
+                center: { lat: 31.7683, lng: 35.2137 }, // Default center in Jerusalem
+                zoom: 14
+            });
+
+            let isPolling = this.getAttribute('data-polling') === 'true'; // Check current polling state
+            let pollingInterval; // Variable to hold the interval ID
+
+            async function fetchAndUpdateMarkers() {
+                try {
+                    const response = await fetch(`/get_locations/${projectCode}`);
+                    const data = await response.json();
+
+                    if (response.ok && data.locations) {
+                        data.locations.forEach(location => {
+                            new google.maps.Marker({
+                                position: { lat: location.latitude, lng: location.longitude },
+                                map: map,
+                                title: location.name
+                            });
+                        });
+                    } else {
+                        console.error("Error fetching locations:", data.detail || "Unknown error");
+                    }
+                } catch (error) {
+                    console.error("Error during marker fetch:", error);
+                }
+            }
+
+            if (!isPolling) {
+                // Start polling
+                this.setAttribute('data-polling', 'true'); // Set polling state to true
+                this.textContent = "עצור תוצאות"; // Update button text
+                fetchAndUpdateMarkers(); // Fetch markers immediately
+                pollingInterval = setInterval(fetchAndUpdateMarkers, 5000); // Poll every 5 seconds
+
+                // Store interval ID in a data attribute
+                this.setAttribute('data-interval-id', pollingInterval);
+            } else {
+                // Stop polling
+                this.setAttribute('data-polling', 'false'); // Set polling state to false
+                this.textContent = "הצג תוצאות"; // Update button text
+
+                // Clear interval using stored interval ID
+                const intervalId = parseInt(this.getAttribute('data-interval-id'), 10);
+                clearInterval(intervalId);
+
+                alert("קריאת התוצאות הופסקה!");
+            }
+        });
 
     </script>
 </body>
