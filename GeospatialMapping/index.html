@@ -149,19 +149,35 @@
         function handleMapClick(event) {
             const clickedLocation = event.latLng;
 
-            // Reverse geocode the clicked location
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ location: clickedLocation }, (results, status) => {
-                if (status === "OK" && results[0]) {
-                    // Use the formatted address as the location name
-                    const locationName = results[0].formatted_address;
-                    setMarkerAtLocation(clickedLocation, locationName);
+            // Initialize PlacesService
+            const service = new google.maps.places.PlacesService(map);
+
+            // Search for places near the clicked location
+            const request = {
+                location: clickedLocation,
+                radius: 50, // Search within 50 meters
+            };
+
+            service.nearbySearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    // Use the first result's name
+                    const placeName = results[0].name;
+                    setMarkerAtLocation(clickedLocation, placeName);
                 } else {
-                    // If geocoding fails, use default name
-                    setMarkerAtLocation(clickedLocation);
+                    // Fallback to reverse geocoding if no business is found
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ location: clickedLocation }, (results, status) => {
+                        if (status === "OK" && results[0]) {
+                            const locationName = results[0].formatted_address;
+                            setMarkerAtLocation(clickedLocation, locationName);
+                        } else {
+                            setMarkerAtLocation(clickedLocation, "Selected Location");
+                        }
+                    });
                 }
             });
         }
+
 
         function approvePoint() {
             if (!selectedCoordinates.latitude || !selectedCoordinates.longitude || !selectedCoordinates.name) {
