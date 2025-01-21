@@ -155,13 +155,13 @@
             // Search for places near the clicked location
             const request = {
                 location: clickedLocation,
-                radius: 100, // Search within 100 meters
+                radius: 200, // Search within 200 meters
             };
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
                     // Use the first result's name
-                    const placeName = results[0].name;
+                    const placeName = results[0].name || "Unnamed Business";
                     setMarkerAtLocation(clickedLocation, placeName);
                 } else {
                     // Fallback to reverse geocoding if no business is found
@@ -177,6 +177,7 @@
                 }
             });
         }
+
 
 
         function approvePoint() {
