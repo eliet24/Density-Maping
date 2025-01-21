@@ -155,7 +155,7 @@
             // Search for places near the clicked location
             const request = {
                 location: clickedLocation,
-                radius: 50, // Search within 50 meters
+                radius: 100, // Search within 100 meters
             };
 
             service.nearbySearch(request, (results, status) => {
