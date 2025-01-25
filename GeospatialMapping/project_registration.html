@@ -473,6 +473,7 @@
 
                 const result = await response.json();
                 if (response.ok && result.project_code) {
+                    projectCode = result.project_code; // Update variable
                     document.getElementById('project-code').value = result.project_code;
                     alert("הפרויקט נמצא! קוד הפרויקט הוזן בהצלחה.");
 
@@ -511,7 +512,6 @@
                                 height: 400
                             });
                             displayButton.textContent = "Hide QR";
-
                         } else {
                             qrCodeDiv.innerHTML = '';
                             displayButton.textContent = "Show QR";
