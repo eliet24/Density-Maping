@@ -455,7 +455,7 @@
             event.preventDefault();
 
             const projectName = document.getElementById('existing-project-name').value;
-            const projectCode = document.getElementById('existing-project-code').value;
+            let projectCode = document.getElementById('existing-project-code').value; // Use let to update later
             const goToIndexButton = document.getElementById('go-to-index-button');
 
             if (!projectName && !projectCode) {
@@ -465,7 +465,7 @@
 
             try {
                 const response = await fetch("/find_project/", {
-                //const response = await fetch("http://127.0.0.1:8000/find_project/", {  // for Debug
+                    //const response = await fetch("http://127.0.0.1:8000/find_project/", {  // for Debug
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: projectName, code: projectCode })
@@ -473,14 +473,14 @@
 
                 const result = await response.json();
                 if (response.ok && result.project_code) {
+                    // Update projectCode and input value
                     projectCode = result.project_code; // Update variable
-                    document.getElementById('project-code').value = result.project_code;
+                    document.getElementById('project-code').value = projectCode;
+
                     alert("הפרויקט נמצא! קוד הפרויקט הוזן בהצלחה.");
 
                     // Fetch the coordinates for the entered address
                     const projectAddress = result.address;
-
-                    // Fetch the coordinates for the entered address
                     const coordinates = await geocodeAddress(projectAddress);
                     ProjectCoordinates = coordinates;
 
@@ -505,7 +505,7 @@
                     displayButton.onclick = function () {
                         if (!isQRVisible) {
                             const baseUrl = window.location.origin;
-                            const indexUrl = `${baseUrl}/index/?projectCode=${encodeURIComponent(projectCode)}`;
+                            const indexUrl = `${baseUrl}/index/?projectCode=${encodeURIComponent(projectCode)}`; // Use updated projectCode
                             new QRCode(qrCodeDiv, {
                                 text: indexUrl,
                                 width: 400,
@@ -518,13 +518,14 @@
                         }
                         isQRVisible = !isQRVisible; // Toggle visibility state
                     };
+
                     // Show the "Go to Index" button
                     goToIndexButton.style.display = "block";
                     goToIndexButton.onclick = function () {
                         // Redirect to index.html with project code
                         const baseUrl = window.location.origin;
                         //const baseUrl = "http://127.0.0.1:8000"; // For Debug
-                        const redirectUrl = `${baseUrl}/index/?projectCode=${encodeURIComponent(projectCode)}`;
+                        const redirectUrl = `${baseUrl}/index/?projectCode=${encodeURIComponent(projectCode)}`; // Use updated projectCode
                         window.location.href = redirectUrl;
                     };
 
@@ -536,6 +537,7 @@
                 console.error(error);
             }
         });
+
 
     </script>
 </body>
