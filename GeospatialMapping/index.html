@@ -155,21 +155,45 @@
             // Search for places near the clicked location
             const request = {
                 location: clickedLocation,
-                radius: 200, // Search within 200 meters
+                radius: 50, // Search within 50 meters for high accuracy
             };
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    // Use the first result's name
-                    const placeName = results[0].name || "Unnamed Business";
-                    setMarkerAtLocation(clickedLocation, placeName);
+                    // Use the first result's place_id to fetch detailed info
+                    const placeId = results[0].place_id;
+
+                    const detailsRequest = {
+                        placeId: placeId,
+                        fields: ["name", "formatted_address", "geometry"], // Request specific fields
+                    };
+
+                    service.getDetails(detailsRequest, (place, status) => {
+                        if (status === google.maps.places.PlacesServiceStatus.OK) {
+                            // Set marker and capture business details
+                            setMarkerAtLocation(place.geometry.location, place.name);
+
+                            // Update selectedCoordinates with the business details
+                            selectedCoordinates.latitude = place.geometry.location.lat();
+                            selectedCoordinates.longitude = place.geometry.location.lng();
+                            selectedCoordinates.name = place.name;
+                        } else {
+                            console.error("Failed to get place details:", status);
+                        }
+                    });
                 } else {
+                    console.error("No nearby places found. Attempting reverse geocoding...");
+
                     // Fallback to reverse geocoding if no business is found
                     const geocoder = new google.maps.Geocoder();
                     geocoder.geocode({ location: clickedLocation }, (results, status) => {
                         if (status === "OK" && results[0]) {
                             const locationName = results[0].formatted_address;
                             setMarkerAtLocation(clickedLocation, locationName);
+
+                            selectedCoordinates.latitude = clickedLocation.lat();
+                            selectedCoordinates.longitude = clickedLocation.lng();
+                            selectedCoordinates.name = locationName; // Default to address
                         } else {
                             setMarkerAtLocation(clickedLocation, "Selected Location");
                         }
@@ -177,7 +201,6 @@
                 }
             });
         }
-
 
 
         function approvePoint() {
@@ -188,7 +211,7 @@
 
             const currentQuestion = questions[currentQuestionIndex];
 
-            fetch("/save_location/",  {
+            fetch("/save_location/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -196,40 +219,33 @@
                     longitude: selectedCoordinates.longitude,
                     name: selectedCoordinates.name,
                     location_type: currentQuestion.key,
-                    project_code: projectCode // Use projectCode from URL
+                    project_code: projectCode,
                 }),
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Saved:", data);
-                Swal.fire({
-                  icon: 'success',
-                  title: 'תודה!',
-                  text: 'המיקום נשמר!',
-                  confirmButtonText: 'אישור'
+                .then((response) => response.json())
+                .then((data) => {
+                    console.log("Saved:", data);
+                    Swal.fire({
+                        icon: "success",
+                        title: "תודה!",
+                        text: "המיקום נשמר!",
+                        confirmButtonText: "אישור",
+                    });
+
+                    currentQuestionIndex++;
+                    updateQuestion();
+
+                    // Reset selected coordinates and clear marker
+                    selectedCoordinates = { latitude: null, longitude: null, name: null };
+                    if (marker) marker.setMap(null);
+                    document.getElementById("pac-input").value = "";
+                })
+                .catch((error) => {
+                    console.error("Error saving data:", error);
+                    alert("There was an error saving the location.");
                 });
-
-                // Move to the next question
-                currentQuestionIndex++;
-
-                // Reset selected coordinates
-                selectedCoordinates = { latitude: null, longitude: null, name: null };
-
-                // Update the question
-                updateQuestion();
-                // Clear the marker after saving
-                if (marker) {
-                    marker.setMap(null);
-                    marker = null;
-                }
-                // Clear the search box input
-                document.getElementById('pac-input').value = '';
-            })
-            .catch(error => {
-                console.error("Error saving data:", error);
-                alert("There was an error saving the location.");
-            });
         }
+
 
         // Fetch the latest project code and initialize map
         document.addEventListener('DOMContentLoaded', fetchProjectCode);
