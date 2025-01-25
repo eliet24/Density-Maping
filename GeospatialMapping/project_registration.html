@@ -29,6 +29,7 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             width: 300px;
             text-align: center;
+            margin-top: -30px;
         }
 
         .map-wrapper {
@@ -65,7 +66,7 @@
 
         #create-project-button {
             width: 150px;
-            padding: 5px;
+            padding: 7px;
             background-color: #4CAF50;
             color: white;
             font-size: 18px;
@@ -73,6 +74,7 @@
             border-radius: 8px;
             cursor: pointer;
             margin-bottom: 20px;
+            margin-top: -20px;
         }
 
         #create-project-button:hover {
@@ -81,13 +83,14 @@
 
         #qrcode-container {
             display: none;
-            padding: 30px;
+            padding: 0px 0px;
             background-color: white;
             text-align: center;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             width: fit-content;
-            margin: 0 20px 20px 0;
+            height: 100px;
+            margin-top: -30px;
         }
 
         #toggle-qr-button {
@@ -111,27 +114,26 @@
 
         #map-container {
             width: 100%; /* Full width for the map */
-            height: 100%; /* Full height for the map */
+            height: 104%; /* Full height for the map */
             border-radius: 8px; /* Keep existing styling */
             background-color: #f0f0f0;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: -30px;
+        }
+
+        #login-form {
+            margin-top: 20px;
         }
 
         #show-results-button {
-            position: absolute; /* Position relative to the .map-wrapper */
-            top: 10px; /* Distance from the top of the map */
-            left: 50%; /* Center horizontally */
-            transform: translateX(-50%); /* Adjust for button's width */
-            background-color: #4CAF50; /* Keep the green color */
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px; /* Space below the button */
+            background-color: #4CAF50; /* Green color */
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 10px 15px;
-            font-size: 14px;
+            border-radius: 5px;
             cursor: pointer;
-            z-index: 10; /* Ensure it stays on top of the map */
-            width: auto; /* Adjusts the button size to its content */
-            min-width: 300px; /* Optional: ensure a consistent minimum width */
         }
 
         #show-results-button:hover {
@@ -158,11 +160,24 @@
 </head>
 <body>
     <div class="main-container">
+
         <!-- Project form container -->
         <div class="form-container">
+
+            <!-- Login form -->
+            <div id="login-form">
+                <h2>כניסה לפרויקט</h2>
+                <form id="existing-project-form">
+                    <input type="text" id="existing-project-name" placeholder="שם הפרויקט">
+                    <input type="text" id="existing-project-code" placeholder="קוד הפרויקט">
+                    <button type="submit">המשך</button>
+                </form>
+            </div>
+
             <button id="create-project-button">צור פרויקט</button>
+
             <div id="form-container">
-                <h2>פרטי הפרויקט</h2>
+                <h2>פרטי פרויקט חדש</h2>
                 <form id="project-form">
                     <input type="text" id="project-name" placeholder="שם הפרויקט" required>
                     <input type="text" id="project-address" placeholder="כתובת הפרויקט" required>
@@ -177,14 +192,14 @@
 
 
         <div id="qrcode-container">
+            <button id="go-to-index-button" style="display: none;">המשך לממשק המשתמש</button>
             <button id="toggle-qr-button">Display QR</button>
-            <button id="go-to-index-button" style="display: none;">המשך למפת המשתמש</button>
+            <button id="show-results-button">הצג תוצאות</button>
             <div id="qrcode"></div>
         </div>
 
         <div class="map-wrapper">
             <div id="map-container"></div>
-            <button id="show-results-button">הצג תוצאות</button>
         </div>
     </div>
 
@@ -415,6 +430,9 @@
         const createProjectButton = document.getElementById('create-project-button');
         const formContainer = document.getElementById('form-container');
 
+        // Ensure form is hidden on load (redundant if CSS sets display: none)
+        formContainer.style.display = 'none';
+
         // Add click event listener to toggle the form visibility
         createProjectButton.addEventListener('click', () => {
             const isFormVisible = formContainer.style.display === 'block';
@@ -422,6 +440,101 @@
 
             // Update the button text based on the form visibility
             createProjectButton.textContent = isFormVisible ? 'צור פרויקט' : 'סגור טופס יצירה';
+        });
+
+
+        // Define necessary elements at the correct scope
+        const qrContainer = document.getElementById('qrcode-container');
+        const qrCodeDiv = document.getElementById('qrcode');
+        const displayButton = document.getElementById('toggle-qr-button');
+        let isQRVisible = false;
+
+        // Handle login form submission
+        const loginForm = document.getElementById('existing-project-form');
+
+        loginForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const projectName = document.getElementById('existing-project-name').value;
+            const projectCode = document.getElementById('existing-project-code').value;
+            const goToIndexButton = document.getElementById('go-to-index-button');
+
+            if (!projectName && !projectCode) {
+                alert("נא להזין שם פרויקט או קוד פרויקט.");
+                return;
+            }
+
+            try {
+                const response = await fetch("/find_project/", {
+                //const response = await fetch("http://127.0.0.1:8000/find_project/", {  // for Debug
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: projectName, code: projectCode })
+                });
+
+                const result = await response.json();
+                if (response.ok && result.project_code) {
+                    document.getElementById('project-code').value = result.project_code;
+                    alert("הפרויקט נמצא! קוד הפרויקט הוזן בהצלחה.");
+
+                    // Fetch the coordinates for the entered address
+                    const projectAddress = result.address;
+
+                    // Fetch the coordinates for the entered address
+                    const coordinates = await geocodeAddress(projectAddress);
+                    ProjectCoordinates = coordinates;
+
+                    // Center the map on the geocoded location
+                    const map = new google.maps.Map(document.getElementById("map-container"), {
+                        center: coordinates,
+                        zoom: 14 // Adjust zoom level
+                    });
+
+                    new google.maps.Marker({
+                        position: coordinates,
+                        map: map,
+                        title: projectAddress
+                    });
+
+                    // Show QR code container and initialize functionality
+                    qrContainer.style.display = 'block';
+                    qrCodeDiv.innerHTML = ''; // Clear any existing QR code
+                    displayButton.textContent = "Show QR";
+
+                    displayButton.onclick = function () {
+                        if (!isQRVisible) {
+                            const baseUrl = window.location.origin;
+                            const indexUrl = `${baseUrl}/index/?projectCode=${encodeURIComponent(result.project_code)}`;
+                            new QRCode(qrCodeDiv, {
+                                text: indexUrl,
+                                width: 400,
+                                height: 400
+                            });
+                            displayButton.textContent = "Hide QR";
+
+                        } else {
+                            qrCodeDiv.innerHTML = '';
+                            displayButton.textContent = "Show QR";
+                        }
+                        isQRVisible = !isQRVisible; // Toggle visibility state
+                    };
+                    // Show the "Go to Index" button
+                    goToIndexButton.style.display = "block";
+                    goToIndexButton.onclick = function () {
+                        // Redirect to index.html with project code
+                        const baseUrl = window.location.origin;
+                        //const baseUrl = "http://127.0.0.1:8000"; // For Debug
+                        const redirectUrl = `${baseUrl}/index/?projectCode=${encodeURIComponent(projectCode)}`;
+                        window.location.href = redirectUrl;
+                    };
+
+                } else {
+                    alert(result.detail || "לא נמצא פרויקט מתאים.");
+                }
+            } catch (error) {
+                alert("שגיאה במהלך חיפוש הפרויקט.");
+                console.error(error);
+            }
         });
 
     </script>

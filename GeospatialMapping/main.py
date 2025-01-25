@@ -193,6 +193,39 @@ async def get_project(project_code: str):
     except Exception as e:
         return {"detail": f"An error occurred: {str(e)}"}
 
+
+@app.post("/find_project/")
+async def find_project(data: dict):
+    """Find an existing project by name or code."""
+    project_name = data.get("name", "").strip()
+    project_code = data.get("code", "").strip()
+
+    if not project_name and not project_code:
+        return {"detail": "Either project name or project code must be provided."}
+
+    try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+
+        # Search by project name or code
+        if project_name:
+            cursor.execute("SELECT name, address, code FROM projects WHERE name = ?", (project_name,))
+        elif project_code:
+            cursor.execute("SELECT name, address, code FROM projects WHERE code = ?", (project_code,))
+
+        result = cursor.fetchone()
+        conn.close()
+
+        if result:
+            return {"name": result[0], "address": result[1], "project_code": result[2]}
+        else:
+            return {"detail": "Project not found."}
+    except Exception as e:
+        return {"detail": f"An error occurred: {str(e)}"}
+
+
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
 
