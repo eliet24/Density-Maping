@@ -469,7 +469,7 @@
                 //const response = await fetch("http://127.0.0.1:8000/find_project/", {  // for Debug
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: projectName, address: projectAddress, code: projectCode })
+                    body: JSON.stringify({ name: projectName, code: projectCode })
                 });
 
                 const result = await response.json();
@@ -478,7 +478,7 @@
                     alert("הפרויקט נמצא! קוד הפרויקט הוזן בהצלחה.");
 
                     // Fetch the coordinates for the entered address
-                    //const projectAddress = result.address;
+                    const projectAddress = result.address;
 
                     // Fetch the coordinates for the entered address
                     const coordinates = await geocodeAddress(projectAddress);
