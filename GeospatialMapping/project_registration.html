@@ -352,6 +352,9 @@
         });
 
 
+        // Ensure the button has the data-polling attribute initialized on page load
+        document.getElementById('show-results-button').setAttribute('data-polling', 'false');
+
         // Add event listener to the "הצג תוצאות" button
         document.getElementById('show-results-button').addEventListener('click', function () {
             const projectCode = document.getElementById('project-code').value;
@@ -375,7 +378,9 @@
                 });
             }
 
-            let isPolling = this.getAttribute('data-polling') === 'true'; // Check current polling state
+            // Ensure polling state is being correctly retrieved from the data-polling attribute
+            let isPolling = this.getAttribute('data-polling') === 'true';
+
             let pollingInterval; // Variable to hold the interval ID
 
             async function fetchAndUpdateMarkers() {
@@ -426,21 +431,6 @@
             }
         });
 
-        // Get references to the button and form container
-        const createProjectButton = document.getElementById('create-project-button');
-        const formContainer = document.getElementById('form-container');
-
-        // Ensure form is hidden on load (redundant if CSS sets display: none)
-        formContainer.style.display = 'none';
-
-        // Add click event listener to toggle the form visibility
-        createProjectButton.addEventListener('click', () => {
-            const isFormVisible = formContainer.style.display === 'block';
-            formContainer.style.display = isFormVisible ? 'none' : 'block';
-
-            // Update the button text based on the form visibility
-            createProjectButton.textContent = isFormVisible ? 'צור פרויקט' : 'סגור טופס יצירה';
-        });
 
 
         // Define necessary elements at the correct scope
