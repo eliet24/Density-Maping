@@ -209,6 +209,9 @@
         let markers = []; // Array to keep track of markers
         let ProjectCoordinates = null;
 
+        // Ensure the button has the data-polling attribute initialized on page load
+        document.getElementById('show-results-button').setAttribute('data-polling', 'false');
+
         function initMap() {
             const map = new google.maps.Map(document.getElementById("map-container"), {
                 center: { lat: 31.7683, lng: 35.2137 }, // Centered in Jerusalem, Israel
@@ -351,10 +354,6 @@
             }
         });
 
-
-        // Ensure the button has the data-polling attribute initialized on page load
-        document.getElementById('show-results-button').setAttribute('data-polling', 'false');
-
         // Add event listener to the "הצג תוצאות" button
         document.getElementById('show-results-button').addEventListener('click', function () {
             const projectCode = document.getElementById('project-code').value;
@@ -370,13 +369,18 @@
                 return;
             }
 
-            // Initialize the map only once
-            if (!map) {
-                map = new google.maps.Map(mapContainer, {
-                    center: ProjectCoordinates, // Default center in Jerusalem
-                    zoom: 14
-                });
+            // Reset the map and markers if switching to a new project
+            if (map) {
+                markers.forEach(marker => marker.setMap(null)); // Clear all markers
+                markers = []; // Reset markers array
+                map = null; // Reset map instance
             }
+
+            // Create a new map for the current project
+            map = new google.maps.Map(mapContainer, {
+                center: ProjectCoordinates, // Default center in Jerusalem
+                zoom: 14
+            });
 
             // Ensure polling state is being correctly retrieved from the data-polling attribute
             let isPolling = this.getAttribute('data-polling') === 'true';
@@ -411,27 +415,22 @@
 
             if (!isPolling) {
                 // Start polling
-                this.setAttribute('data-polling', 'true'); // Set polling state to true
-                this.textContent = "עצור תוצאות"; // Update button text
+                this.setAttribute('data-polling', 'true');
+                this.textContent = "עצור תוצאות";
+
                 fetchAndUpdateMarkers(); // Fetch markers immediately
                 pollingInterval = setInterval(fetchAndUpdateMarkers, 3000); // Poll every 3 seconds
-
-                // Store interval ID in a data attribute
-                this.setAttribute('data-interval-id', pollingInterval);
             } else {
                 // Stop polling
-                this.setAttribute('data-polling', 'false'); // Set polling state to false
-                this.textContent = "הצג תוצאות"; // Update button text
+                this.setAttribute('data-polling', 'false');
+                this.textContent = "הצג תוצאות";
 
-                // Clear interval using stored interval ID
-                const intervalId = parseInt(this.getAttribute('data-interval-id'), 10);
-                clearInterval(intervalId);
-
+                // Clear the polling interval
+                clearInterval(pollingInterval);
+                pollingInterval = null; // Reset interval ID
                 alert("Polling stopped.");
             }
         });
-
-
 
         // Define necessary elements at the correct scope
         const qrContainer = document.getElementById('qrcode-container');
