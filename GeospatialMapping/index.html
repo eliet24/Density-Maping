@@ -155,45 +155,21 @@
             // Search for places near the clicked location
             const request = {
                 location: clickedLocation,
-                radius: 200, // Search within 50 meters for high accuracy
+                radius: 200, // Search within 200 meters
             };
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    // Use the first result's place_id to fetch detailed info
-                    const placeId = results[0].place_id;
-
-                    const detailsRequest = {
-                        placeId: placeId,
-                        fields: ["name", "formatted_address", "geometry"], // Request specific fields
-                    };
-
-                    service.getDetails(detailsRequest, (place, status) => {
-                        if (status === google.maps.places.PlacesServiceStatus.OK) {
-                            // Set marker and capture business details
-                            setMarkerAtLocation(place.geometry.location, place.name);
-
-                            // Update selectedCoordinates with the business details
-                            selectedCoordinates.latitude = place.geometry.location.lat();
-                            selectedCoordinates.longitude = place.geometry.location.lng();
-                            selectedCoordinates.name = place.name;
-                        } else {
-                            console.error("Failed to get place details:", status);
-                        }
-                    });
+                    // Use the first result's name
+                    const placeName = results[0].name || "Unnamed Business";
+                    setMarkerAtLocation(clickedLocation, placeName);
                 } else {
-                    console.error("No nearby places found. Attempting reverse geocoding...");
-
                     // Fallback to reverse geocoding if no business is found
                     const geocoder = new google.maps.Geocoder();
                     geocoder.geocode({ location: clickedLocation }, (results, status) => {
                         if (status === "OK" && results[0]) {
                             const locationName = results[0].formatted_address;
                             setMarkerAtLocation(clickedLocation, locationName);
-
-                            selectedCoordinates.latitude = clickedLocation.lat();
-                            selectedCoordinates.longitude = clickedLocation.lng();
-                            selectedCoordinates.name = locationName; // Default to address
                         } else {
                             setMarkerAtLocation(clickedLocation, "Selected Location");
                         }
@@ -235,12 +211,12 @@
 
                 // Move to the next question
                 currentQuestionIndex++;
-                // Update the question
-                updateQuestion();
 
                 // Reset selected coordinates
                 selectedCoordinates = { latitude: null, longitude: null, name: null };
 
+                // Update the question
+                updateQuestion();
                 // Clear the marker after saving
                 if (marker) {
                     marker.setMap(null);
