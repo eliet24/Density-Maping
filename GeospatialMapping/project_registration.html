@@ -447,7 +447,6 @@
         const qrContainer = document.getElementById('qrcode-container');
         const qrCodeDiv = document.getElementById('qrcode');
         const displayButton = document.getElementById('toggle-qr-button');
-        let isQRVisible = false;
 
         // Handle login form submission
         const loginForm = document.getElementById('existing-project-form');
@@ -499,12 +498,13 @@
                     // Show QR code container and initialize functionality
                     qrContainer.style.display = 'block';
                     qrCodeDiv.innerHTML = ''; // Clear any existing QR code
-                    displayButton.textContent = "Show QR";
+                    let isQRVisible = false;
+                    displayButton.textContent = "Display QR"; // Initialize button text
 
                     displayButton.onclick = function () {
                         if (!isQRVisible) {
                             const baseUrl = window.location.origin;
-                            const indexUrl = `${baseUrl}/index/?projectCode=${encodeURIComponent(result.project_code)}`;
+                            const indexUrl = `${baseUrl}/index/?projectCode=${encodeURIComponent(projectCode)}`;
                             new QRCode(qrCodeDiv, {
                                 text: indexUrl,
                                 width: 400,
