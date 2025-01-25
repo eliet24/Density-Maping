@@ -356,6 +356,7 @@
 
         // Add event listener to the "הצג תוצאות" button
         document.getElementById('show-results-button').addEventListener('click', function () {
+            const showResultsButton = document.getElementById('show-results-button'); // Get the button reference
             const projectCode = document.getElementById('project-code').value;
 
             if (!projectCode) {
@@ -363,13 +364,17 @@
                 return;
             }
 
+            // Change the button color when clicked (indicating it's being processed)
+            showResultsButton.style.backgroundColor = "#FF5722"; // Change to your desired color
+            showResultsButton.style.color = "white"; // Adjust text color for contrast
+
             const mapContainer = document.getElementById("map-container");
             if (!mapContainer) {
                 alert("Map container not found.");
                 return;
             }
 
-            // Ensure the map is initialized only once per project selection
+            // Initialize map if not already initialized
             if (!map) {
                 map = new google.maps.Map(mapContainer, {
                     center: ProjectCoordinates || { lat: 31.7683, lng: 35.2137 }, // Use ProjectCoordinates or default center
@@ -378,7 +383,7 @@
             }
 
             // Clear existing markers before adding new ones
-            markers.forEach(marker => marker.setMap(null));
+            markers.forEach(marker => marker.setMap(null)); // Remove all previous markers
             markers = []; // Clear the markers array
 
             // Center the map on new project coordinates if available
@@ -415,9 +420,15 @@
                 }
             }
 
-            // Start polling if it's not already
+            // Fetch markers and update the map
             fetchAndUpdateMarkers();
             pollingInterval = setInterval(fetchAndUpdateMarkers, 3000); // Poll every 3 seconds
+
+            // Optional: Reset the button color after a certain time, e.g., after fetching markers
+            setTimeout(() => {
+                showResultsButton.style.backgroundColor = ""; // Reset to original color
+                showResultsButton.style.color = ""; // Reset text color
+            }, 3000); // Change the delay time (in milliseconds) as needed
         });
 
 
