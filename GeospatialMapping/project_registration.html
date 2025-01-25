@@ -369,18 +369,13 @@
                 return;
             }
 
-            // Reset the map and markers if switching to a new project
-            if (map) {
-                markers.forEach(marker => marker.setMap(null)); // Clear all markers
-                markers = []; // Reset markers array
-                map = null; // Reset map instance
+            // Ensure the map is initialized only once per project selection
+            if (!map) {
+                map = new google.maps.Map(mapContainer, {
+                    center: ProjectCoordinates || { lat: 31.7683, lng: 35.2137 }, // Use ProjectCoordinates or default center
+                    zoom: 14
+                });
             }
-
-            // Create a new map for the current project
-            map = new google.maps.Map(mapContainer, {
-                center: ProjectCoordinates, // Default center in Jerusalem
-                zoom: 14
-            });
 
             // Ensure polling state is being correctly retrieved from the data-polling attribute
             let isPolling = this.getAttribute('data-polling') === 'true';
@@ -393,10 +388,11 @@
                     const data = await response.json();
 
                     if (response.ok && data.locations) {
-                        // Remove old markers from the map before adding new ones
+                        // Clear old markers before adding new ones
                         markers.forEach(marker => marker.setMap(null));
                         markers = []; // Clear the markers array
 
+                        // Add new markers
                         data.locations.forEach(location => {
                             const marker = new google.maps.Marker({
                                 position: { lat: location.latitude, lng: location.longitude },
@@ -431,6 +427,7 @@
                 alert("Polling stopped.");
             }
         });
+
 
         // Define necessary elements at the correct scope
         const qrContainer = document.getElementById('qrcode-container');
