@@ -377,21 +377,27 @@
                 });
             }
 
-            // Ensure polling state is being correctly retrieved from the data-polling attribute
-            let isPolling = this.getAttribute('data-polling') === 'true';
+            // Clear existing markers before adding new ones
+            markers.forEach(marker => marker.setMap(null));
+            markers = []; // Clear the markers array
 
-            let pollingInterval; // Variable to hold the interval ID
+            // Center the map on new project coordinates if available
+            if (ProjectCoordinates) {
+                map.setCenter(ProjectCoordinates);
+            } else {
+                map.setCenter({ lat: 31.7683, lng: 35.2137 }); // Default center if no coordinates
+            }
 
+            map.setZoom(14); // Adjust zoom level
+
+            // Start polling if needed
+            let pollingInterval;
             async function fetchAndUpdateMarkers() {
                 try {
                     const response = await fetch(`/get_locations/${projectCode}`);
                     const data = await response.json();
 
                     if (response.ok && data.locations) {
-                        // Clear old markers before adding new ones
-                        markers.forEach(marker => marker.setMap(null));
-                        markers = []; // Clear the markers array
-
                         // Add new markers
                         data.locations.forEach(location => {
                             const marker = new google.maps.Marker({
@@ -409,24 +415,11 @@
                 }
             }
 
-            if (!isPolling) {
-                // Start polling
-                this.setAttribute('data-polling', 'true');
-                this.textContent = "עצור תוצאות";
-
-                fetchAndUpdateMarkers(); // Fetch markers immediately
-                pollingInterval = setInterval(fetchAndUpdateMarkers, 3000); // Poll every 3 seconds
-            } else {
-                // Stop polling
-                this.setAttribute('data-polling', 'false');
-                this.textContent = "הצג תוצאות";
-
-                // Clear the polling interval
-                clearInterval(pollingInterval);
-                pollingInterval = null; // Reset interval ID
-                alert("Polling stopped.");
-            }
+            // Start polling if it's not already
+            fetchAndUpdateMarkers();
+            pollingInterval = setInterval(fetchAndUpdateMarkers, 3000); // Poll every 3 seconds
         });
+
 
 
         // Define necessary elements at the correct scope
@@ -464,6 +457,10 @@
                     document.getElementById('project-code').value = projectCode;
 
                     alert("הפרויקט נמצא! קוד הפרויקט הוזן בהצלחה.");
+
+                    // Clear existing markers
+                    markers.forEach(marker => marker.setMap(null));
+                    markers = [];
 
                     // Fetch the coordinates for the entered address
                     const projectAddress = result.address;
