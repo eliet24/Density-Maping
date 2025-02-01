@@ -176,7 +176,7 @@
 
             <button id="create-project-button">צור פרויקט</button>
 
-            <div id="form-container">
+            <div id="form-container" style="display: none;">>
                 <h2>פרטי פרויקט חדש</h2>
                 <form id="project-form">
                     <input type="text" id="project-name" placeholder="שם הפרויקט" required>
@@ -220,6 +220,7 @@
         }
 
         document.addEventListener("DOMContentLoaded", initMap);
+
 
         async function geocodeAddress(address) {
             try {
@@ -431,6 +432,17 @@
             }, 3000); // Change the delay time (in milliseconds) as needed
         });
 
+
+        document.getElementById('create-project-button').addEventListener('click', function() {
+            const formContainer = document.getElementById('form-container');
+
+            // בדיקה אם הטופס מוצג או מוסתר והחלפה של מצב התצוגה
+            if (formContainer.style.display === 'none' || formContainer.style.display === '') {
+                formContainer.style.display = 'block'; // הצגת הטופס
+            } else {
+                formContainer.style.display = 'none'; // הסתרת הטופס
+            }
+        });
 
 
         // Define necessary elements at the correct scope
