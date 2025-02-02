@@ -71,7 +71,8 @@
     <!-- Map Container -->
     <div id="map"></div>
 
-
+    <!-- Approve Button -->
+    <button id="approve-btn"> הוספת המיקום</button>
 
     <div class="error-message" id="error-message" style="display: none;"></div>
 
@@ -156,41 +157,6 @@
                 location: clickedLocation,
                 radius: 50, // Search within 50 meters for high accuracy
             };
-
-
-            const existingApproveButton = document.getElementById("map-approve-btn");
-            if (existingApproveButton) {
-                existingApproveButton.remove();
-            }
-
-            const approveButton = document.createElement("button");
-            approveButton.id = "map-approve-btn";
-            approveButton.innerHTML = "✔";
-            approveButton.style.position = "absolute";
-            approveButton.style.backgroundColor = "green";
-            approveButton.style.color = "white";
-            approveButton.style.border = "none";
-            approveButton.style.padding = "10px";
-            approveButton.style.borderRadius = "50%";
-            approveButton.style.cursor = "pointer";
-            approveButton.style.fontSize = "18px";
-            approveButton.style.zIndex = "1000";
-
-
-            const projection = map.getProjection();
-            const point = projection.fromLatLngToPoint(clickedLocation);
-            approveButton.style.left = `${point.x}px`;
-            approveButton.style.top = `${point.y}px`;
-
-
-            approveButton.addEventListener("click", approvePoint);
-
-            document.body.appendChild(approveButton);
-
-            selectedCoordinates.latitude = clickedLocation.lat();
-            selectedCoordinates.longitude = clickedLocation.lng();
-            selectedCoordinates.name = "Selected Location";
-            setMarkerAtLocation(clickedLocation);
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
