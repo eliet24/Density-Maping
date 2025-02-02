@@ -163,7 +163,6 @@
                 existingApproveButton.remove();
             }
 
-            // יצירת כפתור ✔ חדש
             const approveButton = document.createElement("button");
             approveButton.id = "map-approve-btn";
             approveButton.innerHTML = "✔";
@@ -177,26 +176,21 @@
             approveButton.style.fontSize = "18px";
             approveButton.style.zIndex = "1000";
 
-            // המרת קואורדינטות מסך כדי למקם את הכפתור במיקום שנבחר
+
             const projection = map.getProjection();
             const point = projection.fromLatLngToPoint(clickedLocation);
             approveButton.style.left = `${point.x}px`;
             approveButton.style.top = `${point.y}px`;
 
-            // חיבור לפונקציה הקיימת של אישור הנקודה
+
             approveButton.addEventListener("click", approvePoint);
 
-            // הוספת הכפתור למסך
             document.body.appendChild(approveButton);
 
-            // שמירת הקואורדינטות של המיקום שנבחר
             selectedCoordinates.latitude = clickedLocation.lat();
             selectedCoordinates.longitude = clickedLocation.lng();
-            selectedCoordinates.name = "Selected Location"; // ניתן לעדכן בעתיד עם reverse geocoding
-
-            // יצירת וסימון הנקודה על המפה
+            selectedCoordinates.name = "Selected Location";
             setMarkerAtLocation(clickedLocation);
-        }
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
@@ -363,6 +357,7 @@
 
                 // Clear old marker
                 if (marker) marker.setMap(null);
+
                 const place = places[0];
 
                 setMarkerAtLocation(place.geometry.location, place.name || "Searched Location");
