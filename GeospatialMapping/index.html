@@ -71,8 +71,7 @@
     <!-- Map Container -->
     <div id="map"></div>
 
-    <!-- Approve Button -->
-    <button id="approve-btn"> הוספת המיקום</button>
+
 
     <div class="error-message" id="error-message" style="display: none;"></div>
 
@@ -157,6 +156,47 @@
                 location: clickedLocation,
                 radius: 50, // Search within 50 meters for high accuracy
             };
+
+
+            const existingApproveButton = document.getElementById("map-approve-btn");
+            if (existingApproveButton) {
+                existingApproveButton.remove();
+            }
+
+            // יצירת כפתור ✔ חדש
+            const approveButton = document.createElement("button");
+            approveButton.id = "map-approve-btn";
+            approveButton.innerHTML = "✔";
+            approveButton.style.position = "absolute";
+            approveButton.style.backgroundColor = "green";
+            approveButton.style.color = "white";
+            approveButton.style.border = "none";
+            approveButton.style.padding = "10px";
+            approveButton.style.borderRadius = "50%";
+            approveButton.style.cursor = "pointer";
+            approveButton.style.fontSize = "18px";
+            approveButton.style.zIndex = "1000";
+
+            // המרת קואורדינטות מסך כדי למקם את הכפתור במיקום שנבחר
+            const projection = map.getProjection();
+            const point = projection.fromLatLngToPoint(clickedLocation);
+            approveButton.style.left = `${point.x}px`;
+            approveButton.style.top = `${point.y}px`;
+
+            // חיבור לפונקציה הקיימת של אישור הנקודה
+            approveButton.addEventListener("click", approvePoint);
+
+            // הוספת הכפתור למסך
+            document.body.appendChild(approveButton);
+
+            // שמירת הקואורדינטות של המיקום שנבחר
+            selectedCoordinates.latitude = clickedLocation.lat();
+            selectedCoordinates.longitude = clickedLocation.lng();
+            selectedCoordinates.name = "Selected Location"; // ניתן לעדכן בעתיד עם reverse geocoding
+
+            // יצירת וסימון הנקודה על המפה
+            setMarkerAtLocation(clickedLocation);
+        }
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
@@ -323,7 +363,6 @@
 
                 // Clear old marker
                 if (marker) marker.setMap(null);
-
                 const place = places[0];
 
                 setMarkerAtLocation(place.geometry.location, place.name || "Searched Location");
