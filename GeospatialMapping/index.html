@@ -118,10 +118,16 @@
             } else {
                 document.getElementById("question-container").innerText = "Thank You";
                 document.getElementById("approve-btn").style.display = "none";
-                 setTimeout(() => {
-                    // Close the page or redirect after a short delay
-                    window.close(); // Attempt to close the window
-                }, 2000); // Wait 2 seconds before closing
+                setTimeout(() => {
+                    try {
+                        window.close(); // Attempt to close the window
+                        if (!window.closed) {
+                            window.location.href = "about:blank"; // Fallback: Redirect to an empty page
+                        }
+                    } catch (e) {
+                        console.error("Window close failed:", e);
+                    }
+                }, 2000);
             }
         }
 
