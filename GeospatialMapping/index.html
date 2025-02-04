@@ -306,15 +306,15 @@
             });
             
 
-            // Add the first marker if not already added
             window.initialMarker = new google.maps.Marker({
                 position: coordinates,
-                map: window.map,
+                map: map,  // ✅ Use `map` instead of `window.map`
                 title: "Project Location",
                 icon: {
                     url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
                 }
             });
+
 
             // Add click event listener to the map.
             map.addListener("click", handleMapClick);
