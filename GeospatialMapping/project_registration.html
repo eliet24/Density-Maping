@@ -279,11 +279,20 @@
                         zoom: 14 // Adjust zoom level
                     });
 
-                    new google.maps.Marker({
+                    /*new google.maps.Marker({
                         position: coordinates,
                         map: map,
                         title: projectAddress
                     });
+                    */
+                    // Store the first marker globally
+                    if (!window.initialMarker) {
+                        window.initialMarker = new google.maps.Marker({
+                            position: coordinates,
+                            map: map,
+                            title: projectAddress
+                        });
+                    }
 
                     // Hide the form container
                     document.getElementById('form-container').style.display = 'none';
@@ -384,8 +393,16 @@
             }
 
             // Clear existing markers before adding new ones
-            markers.forEach(marker => marker.setMap(null)); // Remove all previous markers
+            /*markers.forEach(marker => marker.setMap(null)); // Remove all previous markers
             markers = []; // Clear the markers array
+            */
+            // Do not remove the first marker
+            markers.forEach(marker => {
+                if (marker !== window.initialMarker) {
+                    marker.setMap(null);
+                }
+            });
+            markers = markers.filter(marker => marker === window.initialMarker); // Keep only the initial marker
 
             // Center the map on new project coordinates if available
             if (ProjectCoordinates) {
