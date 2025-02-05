@@ -169,17 +169,17 @@
             };
             const category = categoryMapping[currentQuestion.key] || null;
 
-            // Reset selectedCoordinates (to be updated later)
+            // Reset selectedCoordinates
             selectedCoordinates = {
                 latitude: clickedLocation.lat(),
                 longitude: clickedLocation.lng(),
-                name: null
+                name: "Loading..." // Temporary name to prevent null values
             };
 
             // 1️⃣ Try to find the exact business at the clicked location
             const request = {
                 location: clickedLocation,
-                radius: 5, // Small radius to target clicked business
+                radius: 5, // Small radius to get the closest business
                 type: category ? [category] : undefined // Use category filter if available
             };
 
@@ -188,7 +188,7 @@
                     const place = results[0]; // Take the first result (nearest business)
                     const placeId = place.place_id;
 
-                    // Fetch detailed business info
+                    // Fetch full details of the place
                     service.getDetails(
                         { placeId, fields: ["name", "formatted_address", "geometry"] },
                         (placeDetails, status) => {
@@ -198,15 +198,17 @@
 
                                 selectedCoordinates.latitude = placeDetails.geometry.location.lat();
                                 selectedCoordinates.longitude = placeDetails.geometry.location.lng();
-                                selectedCoordinates.name = placeName; // ✅ Store business name
+                                selectedCoordinates.name = placeName; // ✅ Now name is correctly set
+
+                                console.log("✅ Business found:", placeName);
                             } else {
-                                console.error("Failed to get place details:", status);
+                                console.error("❌ Failed to get place details:", status);
                                 fallbackToGeocoder();
                             }
                         }
                     );
                 } else {
-                    console.warn("No business found at clicked location. Attempting reverse geocoding...");
+                    console.warn("⚠ No business found at clicked location. Attempting reverse geocoding...");
                     fallbackToGeocoder();
                 }
             });
@@ -218,9 +220,11 @@
                     if (status === "OK" && results[0]) {
                         const address = results[0].formatted_address;
                         setMarkerAtLocation(clickedLocation, address);
-                        selectedCoordinates.name = address; // ✅ Store address if no business
+                        selectedCoordinates.name = address; // ✅ Store address if no business found
+
+                        console.log("✅ Reverse geocoded location:", address);
                     } else {
-                        console.warn("Reverse geocoding failed. Using generic name.");
+                        console.warn("⚠ Reverse geocoding failed. Using generic name.");
                         setMarkerAtLocation(clickedLocation, "Selected Location");
                         selectedCoordinates.name = "Selected Location";
                     }
