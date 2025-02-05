@@ -120,12 +120,13 @@
                 document.getElementById("approve-btn").style.display = "none";
                 setTimeout(() => {
                     try {
-                        window.close(); // Attempt to close the window
-                        if (!window.closed) {
-                            window.location.href = "about:blank"; // Fallback: Redirect to an empty page
-                        }
+                        window.close(); // Try closing normally
+
+                        // If close fails, force close by opening an empty page
+                        window.open("about:blank", "_self").close();
                     } catch (e) {
                         console.error("Window close failed:", e);
+                        window.location.href = "about:blank"; // As a last resort, redirect
                     }
                 }, 2000);
             }
@@ -154,59 +155,67 @@
 
         function handleMapClick(event) {
             const clickedLocation = event.latLng;
-
-            // Initialize PlacesService
             const service = new google.maps.places.PlacesService(map);
 
-            // Search for places near the clicked location
+            // Get the current question category
+            const currentQuestion = questions[currentQuestionIndex];
+            const categoryMapping = {
+                "FOOD": "restaurant",
+                "FASHION": "clothing_store",
+                "NIGHTLIFE_AND_FUN": "bar",
+                "KINDERGARTEN": "school",
+                "SCHOOL": "school",
+                "RELIGION": "place_of_worship"
+            };
+            const category = categoryMapping[currentQuestion.key] || null;
+
+            // 1️⃣ Try to get place details exactly at clicked location
             const request = {
                 location: clickedLocation,
-                radius: 50, // Search within 50 meters for high accuracy
+                radius: 1, // 1m radius to ensure only exact place is found
+                type: category ? [category] : undefined // Use category filter if available
             };
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    // Use the first result's place_id to fetch detailed info
-                    const placeId = results[0].place_id;
+                    const place = results[0]; // Take the closest place
+                    const placeId = place.place_id;
 
-                    const detailsRequest = {
-                        placeId: placeId,
-                        fields: ["name", "formatted_address", "geometry"], // Request specific fields
-                    };
-
-                    service.getDetails(detailsRequest, (place, status) => {
-                        if (status === google.maps.places.PlacesServiceStatus.OK) {
-                            // Set marker and capture business details
-                            setMarkerAtLocation(place.geometry.location, place.name);
-
-                            // Update selectedCoordinates with the business details
-                            selectedCoordinates.latitude = place.geometry.location.lat();
-                            selectedCoordinates.longitude = place.geometry.location.lng();
-                            selectedCoordinates.name = place.name;
-                        } else {
-                            console.error("Failed to get place details:", status);
+                    // Fetch full details of the place
+                    service.getDetails(
+                        { placeId, fields: ["name", "formatted_address", "geometry"] },
+                        (placeDetails, status) => {
+                            if (status === google.maps.places.PlacesServiceStatus.OK) {
+                                setMarkerAtLocation(placeDetails.geometry.location, placeDetails.name);
+                                selectedCoordinates.latitude = placeDetails.geometry.location.lat();
+                                selectedCoordinates.longitude = placeDetails.geometry.location.lng();
+                                selectedCoordinates.name = placeDetails.name;
+                            } else {
+                                console.error("Failed to get place details:", status);
+                            }
                         }
-                    });
+                    );
                 } else {
-                    console.error("No nearby places found. Attempting reverse geocoding...");
+                    console.warn("No business found at exact location. Attempting reverse geocoding...");
 
-                    // Fallback to reverse geocoding if no business is found
+                    // 2️⃣ Fallback: Use reverse geocoding if no business is found
                     const geocoder = new google.maps.Geocoder();
                     geocoder.geocode({ location: clickedLocation }, (results, status) => {
                         if (status === "OK" && results[0]) {
                             const locationName = results[0].formatted_address;
                             setMarkerAtLocation(clickedLocation, locationName);
-
                             selectedCoordinates.latitude = clickedLocation.lat();
                             selectedCoordinates.longitude = clickedLocation.lng();
-                            selectedCoordinates.name = locationName; // Default to address
+                            selectedCoordinates.name = locationName;
                         } else {
+                            console.warn("Reverse geocoding failed. Using generic name.");
                             setMarkerAtLocation(clickedLocation, "Selected Location");
                         }
                     });
                 }
             });
         }
+
 
 
         function approvePoint() {
