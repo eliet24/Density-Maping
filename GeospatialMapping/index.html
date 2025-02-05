@@ -169,61 +169,64 @@
             };
             const category = categoryMapping[currentQuestion.key] || null;
 
-            // Reset selectedCoordinates (will be updated later)
+            // Reset selectedCoordinates (to be updated later)
             selectedCoordinates = {
                 latitude: clickedLocation.lat(),
                 longitude: clickedLocation.lng(),
                 name: null
             };
 
-            // 1️⃣ Try to get place details at clicked location
+            // 1️⃣ Try to find the exact business at the clicked location
             const request = {
                 location: clickedLocation,
-                radius: 1, // 1m radius to ensure only exact place is found
+                radius: 5, // Small radius to target clicked business
                 type: category ? [category] : undefined // Use category filter if available
             };
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    const place = results[0]; // Take the closest place
+                    const place = results[0]; // Take the first result (nearest business)
                     const placeId = place.place_id;
 
-                    // Fetch full details of the place
+                    // Fetch detailed business info
                     service.getDetails(
                         { placeId, fields: ["name", "formatted_address", "geometry"] },
                         (placeDetails, status) => {
                             if (status === google.maps.places.PlacesServiceStatus.OK) {
-                                setMarkerAtLocation(placeDetails.geometry.location, placeDetails.name);
+                                const placeName = placeDetails.name || placeDetails.formatted_address;
+                                setMarkerAtLocation(placeDetails.geometry.location, placeName);
+
                                 selectedCoordinates.latitude = placeDetails.geometry.location.lat();
                                 selectedCoordinates.longitude = placeDetails.geometry.location.lng();
-                                selectedCoordinates.name = placeDetails.name;
+                                selectedCoordinates.name = placeName; // ✅ Store business name
                             } else {
                                 console.error("Failed to get place details:", status);
-                                setMarkerAtLocation(clickedLocation, "Unknown Place");
-                                selectedCoordinates.name = "Unknown Place"; // Fallback
+                                fallbackToGeocoder();
                             }
                         }
                     );
                 } else {
-                    console.warn("No business found at exact location. Attempting reverse geocoding...");
-
-                    // 2️⃣ Fallback: Use reverse geocoding if no business is found
-                    const geocoder = new google.maps.Geocoder();
-                    geocoder.geocode({ location: clickedLocation }, (results, status) => {
-                        if (status === "OK" && results[0]) {
-                            const locationName = results[0].formatted_address;
-                            setMarkerAtLocation(clickedLocation, locationName);
-                            selectedCoordinates.name = locationName;
-                        } else {
-                            console.warn("Reverse geocoding failed. Using generic name.");
-                            setMarkerAtLocation(clickedLocation, "Selected Location");
-                            selectedCoordinates.name = "Selected Location";
-                        }
-                    });
+                    console.warn("No business found at clicked location. Attempting reverse geocoding...");
+                    fallbackToGeocoder();
                 }
             });
-        }
 
+            // 2️⃣ Fallback: Reverse geocode if no business is found
+            function fallbackToGeocoder() {
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ location: clickedLocation }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        const address = results[0].formatted_address;
+                        setMarkerAtLocation(clickedLocation, address);
+                        selectedCoordinates.name = address; // ✅ Store address if no business
+                    } else {
+                        console.warn("Reverse geocoding failed. Using generic name.");
+                        setMarkerAtLocation(clickedLocation, "Selected Location");
+                        selectedCoordinates.name = "Selected Location";
+                    }
+                });
+            }
+        }
 
 
         function approvePoint() {
