@@ -169,7 +169,14 @@
             };
             const category = categoryMapping[currentQuestion.key] || null;
 
-            // 1️⃣ Try to get place details exactly at clicked location
+            // Reset selectedCoordinates (will be updated later)
+            selectedCoordinates = {
+                latitude: clickedLocation.lat(),
+                longitude: clickedLocation.lng(),
+                name: null
+            };
+
+            // 1️⃣ Try to get place details at clicked location
             const request = {
                 location: clickedLocation,
                 radius: 1, // 1m radius to ensure only exact place is found
@@ -192,6 +199,8 @@
                                 selectedCoordinates.name = placeDetails.name;
                             } else {
                                 console.error("Failed to get place details:", status);
+                                setMarkerAtLocation(clickedLocation, "Unknown Place");
+                                selectedCoordinates.name = "Unknown Place"; // Fallback
                             }
                         }
                     );
@@ -204,12 +213,11 @@
                         if (status === "OK" && results[0]) {
                             const locationName = results[0].formatted_address;
                             setMarkerAtLocation(clickedLocation, locationName);
-                            selectedCoordinates.latitude = clickedLocation.lat();
-                            selectedCoordinates.longitude = clickedLocation.lng();
                             selectedCoordinates.name = locationName;
                         } else {
                             console.warn("Reverse geocoding failed. Using generic name.");
                             setMarkerAtLocation(clickedLocation, "Selected Location");
+                            selectedCoordinates.name = "Selected Location";
                         }
                     });
                 }
@@ -219,9 +227,14 @@
 
 
         function approvePoint() {
-            if (!selectedCoordinates.latitude || !selectedCoordinates.longitude || !selectedCoordinates.name) {
+            if (!selectedCoordinates.latitude || !selectedCoordinates.longitude) {
                 alert("אנא בחר מיקום על המפה.");
                 return;
+            }
+
+            // Ensure name is set
+            if (!selectedCoordinates.name || selectedCoordinates.name === null) {
+                selectedCoordinates.name = "Unnamed Location"; // Fallback
             }
 
             const currentQuestion = questions[currentQuestionIndex];
