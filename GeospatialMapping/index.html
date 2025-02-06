@@ -153,125 +153,68 @@
             map.panTo(location);
         }
 
+
+
         function handleMapClick(event) {
             const clickedLocation = event.latLng;
             const service = new google.maps.places.PlacesService(map);
 
-            // Disable the approve button while fetching data
-            document.getElementById("approve-btn").disabled = true;
-
-            // Remove the previous marker before placing a new one
+            // Remove previous marker
             if (window.currentMarker) {
                 window.currentMarker.setMap(null);
             }
 
-            // Place a new marker at the clicked location
+            // Place a new marker
             window.currentMarker = new google.maps.Marker({
                 position: clickedLocation,
                 map: map,
-                title: "Loading..." // Temporary title
+                title: "Searching..."
             });
-
-            // Get the current question category
-            const currentQuestion = questions[currentQuestionIndex];
-            const categoryMapping = {
-                "FOOD": "restaurant",
-                "FASHION": "clothing_store",
-                "NIGHTLIFE_AND_FUN": "bar",
-                "KINDERGARTEN": "school",
-                "SCHOOL": "school",
-                "RELIGION": "place_of_worship"
-            };
-            const category = categoryMapping[currentQuestion.key] || null;
 
             // Reset selectedCoordinates
             selectedCoordinates = {
                 latitude: clickedLocation.lat(),
                 longitude: clickedLocation.lng(),
-                name: "Loading..." // Placeholder
+                name: "Unknown Location"
             };
 
-            // Try to find a business at the clicked location
+            // Search for business
             const request = {
                 location: clickedLocation,
                 radius: 10,
-                type: category ? [category] : undefined
+                type: ["establishment"]
             };
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
                     const place = results[0];
-                    const placeId = place.place_id;
 
                     service.getDetails(
-                        { placeId, fields: ["name", "formatted_address", "geometry"] },
+                        { placeId: place.place_id, fields: ["name", "formatted_address", "geometry"] },
                         (placeDetails, status) => {
                             if (status === google.maps.places.PlacesServiceStatus.OK) {
-                                const placeName = placeDetails.name;
-                                const fullAddress = placeDetails.formatted_address;
-
-                                window.currentMarker.setTitle(placeName);
-
-                                // ✅ Update selectedCoordinates with business name + address
-                                selectedCoordinates = {
-                                    latitude: placeDetails.geometry.location.lat(),
-                                    longitude: placeDetails.geometry.location.lng(),
-                                    name: `${placeName}, ${fullAddress}`
-                                };
-
-                                console.log("✅ Business found:", selectedCoordinates);
-
-                                // ✅ Enable the approve button
-                                document.getElementById("approve-btn").disabled = false;
-                            } else {
-                                console.error("❌ Failed to get place details:", status);
-                                fallbackToGeocoder();
+                                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
+                                console.log("✅ Business found:", selectedCoordinates.name);
+                                window.currentMarker.setTitle(selectedCoordinates.name);
                             }
                         }
                     );
                 } else {
-                    console.warn("⚠ No business found. Attempting reverse geocoding...");
-                    fallbackToGeocoder();
+                    fallbackToGeocoder(clickedLocation);
                 }
             });
 
-            // 2️⃣ Reverse Geocoding (Fallback)
-            function fallbackToGeocoder() {
+            function fallbackToGeocoder(location) {
                 const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ location: clickedLocation }, (results, status) => {
+                geocoder.geocode({ location }, (results, status) => {
                     if (status === "OK" && results[0]) {
-                        const fullAddress = results[0].formatted_address;
-
-                        window.currentMarker.setTitle(fullAddress);
-
-                        selectedCoordinates = {
-                            latitude: clickedLocation.lat(),
-                            longitude: clickedLocation.lng(),
-                            name: fullAddress
-                        };
-
-                        console.log("✅ Reverse geocoded:", selectedCoordinates);
-
-                        // ✅ Enable the approve button
-                        document.getElementById("approve-btn").disabled = false;
-                    } else {
-                        console.warn("⚠ Reverse geocoding failed. Using generic name.");
-                        
-                        window.currentMarker.setTitle("Selected Location");
-
-                        selectedCoordinates = {
-                            latitude: clickedLocation.lat(),
-                            longitude: clickedLocation.lng(),
-                            name: "Selected Location"
-                        };
-
-                        // ✅ Enable the approve button
-                        document.getElementById("approve-btn").disabled = false;
+                        selectedCoordinates.name = results[0].formatted_address;
+                        console.log("✅ Reverse geocoded:", selectedCoordinates.name);
+                        window.currentMarker.setTitle(selectedCoordinates.name);
                     }
                 });
             }
         }
-
 
 
         function approvePoint() {
@@ -280,9 +223,9 @@
                 return;
             }
 
-            // No need to check for "Loading..." anymore
-            if (!selectedCoordinates.name) {
-                selectedCoordinates.name = "Unnamed Location"; // Fallback
+            // Ensure name is always set to something meaningful
+            if (!selectedCoordinates.name || selectedCoordinates.name === "Unknown Location") {
+                selectedCoordinates.name = "Unnamed Location";
             }
 
             const currentQuestion = questions[currentQuestionIndex];
@@ -298,8 +241,8 @@
                     project_code: projectCode
                 })
             })
-            .then((response) => response.json())
-            .then((data) => {
+            .then(response => response.json())
+            .then(data => {
                 console.log("📌 Saved:", data);
                 Swal.fire({
                     icon: "success",
@@ -315,16 +258,12 @@
                 selectedCoordinates = { latitude: null, longitude: null, name: null };
                 if (window.currentMarker) window.currentMarker.setMap(null);
                 document.getElementById("pac-input").value = "";
-
-                // Disable approve button again until new selection
-                document.getElementById("approve-btn").disabled = true;
             })
-            .catch((error) => {
+            .catch(error => {
                 console.error("❌ Error saving data:", error);
                 alert("There was an error saving the location.");
             });
         }
-
 
 
         // Fetch the latest project code and initialize map
