@@ -157,6 +157,9 @@
             const clickedLocation = event.latLng;
             const service = new google.maps.places.PlacesService(map);
 
+            // Disable the approve button while fetching data
+            document.getElementById("approve-btn").disabled = true;
+
             // Remove the previous marker before placing a new one
             if (window.currentMarker) {
                 window.currentMarker.setMap(null);
@@ -188,7 +191,7 @@
                 name: "Loading..." // Placeholder
             };
 
-            // 1️⃣ Try to find a business at the clicked location
+            // Try to find a business at the clicked location
             const request = {
                 location: clickedLocation,
                 radius: 10,
@@ -209,7 +212,7 @@
 
                                 window.currentMarker.setTitle(placeName);
 
-                                // ✅ Ensure name is fully updated before saving
+                                // ✅ Update selectedCoordinates with business name + address
                                 selectedCoordinates = {
                                     latitude: placeDetails.geometry.location.lat(),
                                     longitude: placeDetails.geometry.location.lng(),
@@ -217,6 +220,9 @@
                                 };
 
                                 console.log("✅ Business found:", selectedCoordinates);
+
+                                // ✅ Enable the approve button
+                                document.getElementById("approve-btn").disabled = false;
                             } else {
                                 console.error("❌ Failed to get place details:", status);
                                 fallbackToGeocoder();
@@ -245,6 +251,9 @@
                         };
 
                         console.log("✅ Reverse geocoded:", selectedCoordinates);
+
+                        // ✅ Enable the approve button
+                        document.getElementById("approve-btn").disabled = false;
                     } else {
                         console.warn("⚠ Reverse geocoding failed. Using generic name.");
                         
@@ -255,10 +264,14 @@
                             longitude: clickedLocation.lng(),
                             name: "Selected Location"
                         };
+
+                        // ✅ Enable the approve button
+                        document.getElementById("approve-btn").disabled = false;
                     }
                 });
             }
         }
+
 
 
         function approvePoint() {
@@ -267,10 +280,9 @@
                 return;
             }
 
-            // Ensure name is set and prevent saving "Loading..."
-            if (!selectedCoordinates.name || selectedCoordinates.name === "Loading...") {
-                alert("Please wait while the location details are retrieved.");
-                return;
+            // No need to check for "Loading..." anymore
+            if (!selectedCoordinates.name) {
+                selectedCoordinates.name = "Unnamed Location"; // Fallback
             }
 
             const currentQuestion = questions[currentQuestionIndex];
@@ -303,12 +315,16 @@
                 selectedCoordinates = { latitude: null, longitude: null, name: null };
                 if (window.currentMarker) window.currentMarker.setMap(null);
                 document.getElementById("pac-input").value = "";
+
+                // Disable approve button again until new selection
+                document.getElementById("approve-btn").disabled = true;
             })
             .catch((error) => {
                 console.error("❌ Error saving data:", error);
                 alert("There was an error saving the location.");
             });
         }
+
 
 
         // Fetch the latest project code and initialize map
