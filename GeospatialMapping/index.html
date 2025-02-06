@@ -157,6 +157,18 @@
             const clickedLocation = event.latLng;
             const service = new google.maps.places.PlacesService(map);
 
+            // Remove the previous marker before placing a new one
+            if (window.currentMarker) {
+                window.currentMarker.setMap(null);
+            }
+
+            // Place a new marker at the clicked location (default red Google Maps marker)
+            window.currentMarker = new google.maps.Marker({
+                position: clickedLocation,
+                map: map,
+                title: "Loading..." // Placeholder title until we fetch data
+            });
+
             // Get the current question category
             const currentQuestion = questions[currentQuestionIndex];
             const categoryMapping = {
@@ -169,82 +181,85 @@
             };
             const category = categoryMapping[currentQuestion.key] || null;
 
-            // Reset selectedCoordinates with a temporary "Loading..." name
+            // Reset selectedCoordinates with temporary values
             selectedCoordinates = {
                 latitude: clickedLocation.lat(),
                 longitude: clickedLocation.lng(),
-                name: "Loading..." // Temporary name
+                name: "Loading..." // Placeholder until we fetch data
             };
 
-            // ✅ Add a marker immediately with "Loading..." as the name
-            let tempMarker = new google.maps.Marker({
-                position: clickedLocation,
-                map: map,
-                title: "Loading...",
-                icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png" // Temporary blue icon
-            });
-
-            // 1️⃣ Try to find the exact business at the clicked location
+            // 1️⃣ Try to find a business at the clicked location
             const request = {
                 location: clickedLocation,
-                radius: 5, // Small radius to get the closest business
+                radius: 10, // Small radius to find the closest business
                 type: category ? [category] : undefined // Use category filter if available
             };
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    const place = results[0]; // Take the first result (nearest business)
+                    const place = results[0]; // Closest business
                     const placeId = place.place_id;
 
-                    // Fetch full details of the place
+                    // Fetch full business details
                     service.getDetails(
                         { placeId, fields: ["name", "formatted_address", "geometry"] },
                         (placeDetails, status) => {
                             if (status === google.maps.places.PlacesServiceStatus.OK) {
-                                const placeName = placeDetails.name || placeDetails.formatted_address;
+                                const placeName = placeDetails.name;
+                                const fullAddress = placeDetails.formatted_address;
 
-                                // ✅ Update the marker title and icon
-                                tempMarker.setTitle(placeName);
-                                tempMarker.setIcon("http://maps.google.com/mapfiles/ms/icons/red-dot.png"); // Change to red
+                                // ✅ Update marker title with business name
+                                window.currentMarker.setTitle(placeName);
 
-                                // ✅ Update selectedCoordinates with correct values
-                                selectedCoordinates.latitude = placeDetails.geometry.location.lat();
-                                selectedCoordinates.longitude = placeDetails.geometry.location.lng();
-                                selectedCoordinates.name = placeName;
+                                // ✅ Update selectedCoordinates with business name + address
+                                selectedCoordinates = {
+                                    latitude: placeDetails.geometry.location.lat(),
+                                    longitude: placeDetails.geometry.location.lng(),
+                                    name: `${placeName}, ${fullAddress}` // Store Business Name + Address
+                                };
 
-                                console.log("✅ Business found:", placeName);
+                                console.log("✅ Business found:", selectedCoordinates);
                             } else {
                                 console.error("❌ Failed to get place details:", status);
-                                fallbackToGeocoder(tempMarker);
+                                fallbackToGeocoder();
                             }
                         }
                     );
                 } else {
-                    console.warn("⚠ No business found at clicked location. Attempting reverse geocoding...");
-                    fallbackToGeocoder(tempMarker);
+                    console.warn("⚠ No business found. Attempting reverse geocoding...");
+                    fallbackToGeocoder();
                 }
             });
 
-            // 2️⃣ Fallback: Reverse geocode if no business is found
-            function fallbackToGeocoder(marker) {
+            // 2️⃣ Reverse Geocoding (Fallback)
+            function fallbackToGeocoder() {
                 const geocoder = new google.maps.Geocoder();
                 geocoder.geocode({ location: clickedLocation }, (results, status) => {
                     if (status === "OK" && results[0]) {
-                        const address = results[0].formatted_address;
-                        
-                        // ✅ Update marker with the address
-                        marker.setTitle(address);
-                        marker.setIcon("http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"); // Yellow for fallback
+                        const fullAddress = results[0].formatted_address;
 
-                        // ✅ Store the reverse-geocoded address
-                        selectedCoordinates.name = address;
+                        // ✅ Update marker title with full address
+                        window.currentMarker.setTitle(fullAddress);
 
-                        console.log("✅ Reverse geocoded location:", address);
+                        // ✅ Update selectedCoordinates with address-only
+                        selectedCoordinates = {
+                            latitude: clickedLocation.lat(),
+                            longitude: clickedLocation.lng(),
+                            name: fullAddress // Store only the full address
+                        };
+
+                        console.log("✅ Reverse geocoded:", selectedCoordinates);
                     } else {
                         console.warn("⚠ Reverse geocoding failed. Using generic name.");
                         
-                        marker.setTitle("Selected Location");
-                        selectedCoordinates.name = "Selected Location";
+                        // Fallback to "Selected Location" if nothing is found
+                        window.currentMarker.setTitle("Selected Location");
+
+                        selectedCoordinates = {
+                            latitude: clickedLocation.lat(),
+                            longitude: clickedLocation.lng(),
+                            name: "Selected Location"
+                        };
                     }
                 });
             }
@@ -365,7 +380,7 @@
                 map: map,  // ✅ Use `map` instead of `window.map`
                 title: "Project Location",
                 icon: {
-                    url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                    url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
                 }
             });
 
