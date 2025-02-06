@@ -169,12 +169,20 @@
             };
             const category = categoryMapping[currentQuestion.key] || null;
 
-            // Reset selectedCoordinates
+            // Reset selectedCoordinates with a temporary "Loading..." name
             selectedCoordinates = {
                 latitude: clickedLocation.lat(),
                 longitude: clickedLocation.lng(),
-                name: "Loading..." // Temporary name to prevent null values
+                name: "Loading..." // Temporary name
             };
+
+            // ✅ Add a marker immediately with "Loading..." as the name
+            let tempMarker = new google.maps.Marker({
+                position: clickedLocation,
+                map: map,
+                title: "Loading...",
+                icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png" // Temporary blue icon
+            });
 
             // 1️⃣ Try to find the exact business at the clicked location
             const request = {
@@ -194,43 +202,54 @@
                         (placeDetails, status) => {
                             if (status === google.maps.places.PlacesServiceStatus.OK) {
                                 const placeName = placeDetails.name || placeDetails.formatted_address;
-                                setMarkerAtLocation(placeDetails.geometry.location, placeName);
 
+                                // ✅ Update the marker title and icon
+                                tempMarker.setTitle(placeName);
+                                tempMarker.setIcon("http://maps.google.com/mapfiles/ms/icons/red-dot.png"); // Change to red
+
+                                // ✅ Update selectedCoordinates with correct values
                                 selectedCoordinates.latitude = placeDetails.geometry.location.lat();
                                 selectedCoordinates.longitude = placeDetails.geometry.location.lng();
-                                selectedCoordinates.name = placeName; // ✅ Now name is correctly set
+                                selectedCoordinates.name = placeName;
 
                                 console.log("✅ Business found:", placeName);
                             } else {
                                 console.error("❌ Failed to get place details:", status);
-                                fallbackToGeocoder();
+                                fallbackToGeocoder(tempMarker);
                             }
                         }
                     );
                 } else {
                     console.warn("⚠ No business found at clicked location. Attempting reverse geocoding...");
-                    fallbackToGeocoder();
+                    fallbackToGeocoder(tempMarker);
                 }
             });
 
             // 2️⃣ Fallback: Reverse geocode if no business is found
-            function fallbackToGeocoder() {
+            function fallbackToGeocoder(marker) {
                 const geocoder = new google.maps.Geocoder();
                 geocoder.geocode({ location: clickedLocation }, (results, status) => {
                     if (status === "OK" && results[0]) {
                         const address = results[0].formatted_address;
-                        setMarkerAtLocation(clickedLocation, address);
-                        selectedCoordinates.name = address; // ✅ Store address if no business found
+                        
+                        // ✅ Update marker with the address
+                        marker.setTitle(address);
+                        marker.setIcon("http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"); // Yellow for fallback
+
+                        // ✅ Store the reverse-geocoded address
+                        selectedCoordinates.name = address;
 
                         console.log("✅ Reverse geocoded location:", address);
                     } else {
                         console.warn("⚠ Reverse geocoding failed. Using generic name.");
-                        setMarkerAtLocation(clickedLocation, "Selected Location");
+                        
+                        marker.setTitle("Selected Location");
                         selectedCoordinates.name = "Selected Location";
                     }
                 });
             }
         }
+
 
 
         function approvePoint() {
