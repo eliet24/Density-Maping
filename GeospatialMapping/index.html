@@ -162,11 +162,11 @@
                 window.currentMarker.setMap(null);
             }
 
-            // Place a new marker at the clicked location (default red Google Maps marker)
+            // Place a new marker at the clicked location
             window.currentMarker = new google.maps.Marker({
                 position: clickedLocation,
                 map: map,
-                title: "Loading..." // Placeholder title until we fetch data
+                title: "Loading..." // Temporary title
             });
 
             // Get the current question category
@@ -181,26 +181,25 @@
             };
             const category = categoryMapping[currentQuestion.key] || null;
 
-            // Reset selectedCoordinates with temporary values
+            // Reset selectedCoordinates
             selectedCoordinates = {
                 latitude: clickedLocation.lat(),
                 longitude: clickedLocation.lng(),
-                name: "Loading..." // Placeholder until we fetch data
+                name: "Loading..." // Placeholder
             };
 
             // 1️⃣ Try to find a business at the clicked location
             const request = {
                 location: clickedLocation,
-                radius: 10, // Small radius to find the closest business
-                type: category ? [category] : undefined // Use category filter if available
+                radius: 10,
+                type: category ? [category] : undefined
             };
 
             service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    const place = results[0]; // Closest business
+                    const place = results[0];
                     const placeId = place.place_id;
 
-                    // Fetch full business details
                     service.getDetails(
                         { placeId, fields: ["name", "formatted_address", "geometry"] },
                         (placeDetails, status) => {
@@ -208,14 +207,13 @@
                                 const placeName = placeDetails.name;
                                 const fullAddress = placeDetails.formatted_address;
 
-                                // ✅ Update marker title with business name
                                 window.currentMarker.setTitle(placeName);
 
-                                // ✅ Update selectedCoordinates with business name + address
+                                // ✅ Ensure name is fully updated before saving
                                 selectedCoordinates = {
                                     latitude: placeDetails.geometry.location.lat(),
                                     longitude: placeDetails.geometry.location.lng(),
-                                    name: `${placeName}, ${fullAddress}` // Store Business Name + Address
+                                    name: `${placeName}, ${fullAddress}`
                                 };
 
                                 console.log("✅ Business found:", selectedCoordinates);
@@ -238,21 +236,18 @@
                     if (status === "OK" && results[0]) {
                         const fullAddress = results[0].formatted_address;
 
-                        // ✅ Update marker title with full address
                         window.currentMarker.setTitle(fullAddress);
 
-                        // ✅ Update selectedCoordinates with address-only
                         selectedCoordinates = {
                             latitude: clickedLocation.lat(),
                             longitude: clickedLocation.lng(),
-                            name: fullAddress // Store only the full address
+                            name: fullAddress
                         };
 
                         console.log("✅ Reverse geocoded:", selectedCoordinates);
                     } else {
                         console.warn("⚠ Reverse geocoding failed. Using generic name.");
                         
-                        // Fallback to "Selected Location" if nothing is found
                         window.currentMarker.setTitle("Selected Location");
 
                         selectedCoordinates = {
@@ -266,16 +261,16 @@
         }
 
 
-
         function approvePoint() {
             if (!selectedCoordinates.latitude || !selectedCoordinates.longitude) {
                 alert("אנא בחר מיקום על המפה.");
                 return;
             }
 
-            // Ensure name is set
-            if (!selectedCoordinates.name || selectedCoordinates.name === null) {
-                selectedCoordinates.name = "Unnamed Location"; // Fallback
+            // Ensure name is set and prevent saving "Loading..."
+            if (!selectedCoordinates.name || selectedCoordinates.name === "Loading...") {
+                alert("Please wait while the location details are retrieved.");
+                return;
             }
 
             const currentQuestion = questions[currentQuestionIndex];
@@ -288,31 +283,31 @@
                     longitude: selectedCoordinates.longitude,
                     name: selectedCoordinates.name,
                     location_type: currentQuestion.key,
-                    project_code: projectCode,
-                }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    console.log("Saved:", data);
-                    Swal.fire({
-                        icon: "success",
-                        title: "תודה!",
-                        text: "המיקום נשמר!",
-                        confirmButtonText: "אישור",
-                    });
-
-                    currentQuestionIndex++;
-                    updateQuestion();
-
-                    // Reset selected coordinates and clear marker
-                    selectedCoordinates = { latitude: null, longitude: null, name: null };
-                    if (marker) marker.setMap(null);
-                    document.getElementById("pac-input").value = "";
+                    project_code: projectCode
                 })
-                .catch((error) => {
-                    console.error("Error saving data:", error);
-                    alert("There was an error saving the location.");
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log("📌 Saved:", data);
+                Swal.fire({
+                    icon: "success",
+                    title: "תודה!",
+                    text: "המיקום נשמר!",
+                    confirmButtonText: "אישור"
                 });
+
+                currentQuestionIndex++;
+                updateQuestion();
+
+                // Reset selected coordinates and clear marker
+                selectedCoordinates = { latitude: null, longitude: null, name: null };
+                if (window.currentMarker) window.currentMarker.setMap(null);
+                document.getElementById("pac-input").value = "";
+            })
+            .catch((error) => {
+                console.error("❌ Error saving data:", error);
+                alert("There was an error saving the location.");
+            });
         }
 
 
