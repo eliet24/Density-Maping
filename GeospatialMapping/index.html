@@ -90,9 +90,9 @@
         let map, marker = null;
         let searchBox;
         let selectedCoordinates = { latitude: null, longitude: null, name: null };
-        let projectCode = null; // Initialize as null
+        let projectCode = null; 
 
-
+        // Fetch project details and initialize the map
         async function fetchProjectCode() {
             try {
                 projectCode = getQueryParameter('projectCode');
@@ -111,32 +111,11 @@
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
-
-        function updateQuestion() {
-            if (currentQuestionIndex < questions.length) {
-                document.getElementById("question-container").innerText = questions[currentQuestionIndex].text;
-            } else {
-                document.getElementById("question-container").innerText = "Thank You";
-                document.getElementById("approve-btn").style.display = "none";
-                setTimeout(() => {
-                    try {
-                        window.close(); // Try closing normally
-
-                        // If close fails, force close by opening an empty page
-                        window.open("about:blank", "_self").close();
-                    } catch (e) {
-                        console.error("Window close failed:", e);
-                        window.location.href = "about:blank"; // As a last resort, redirect
-                    }
-                }, 2000);
-            }
-        }
-
+        
+        // 📍 Set marker on the map
         function setMarkerAtLocation(location, name = "Selected Location") {
             // Clear existing marker if any
-            if (marker) {
-                marker.setMap(null);
-            }
+            if (marker) marker.setMap(null);
 
             // Create new marker
             marker = new google.maps.Marker({
@@ -153,8 +132,7 @@
             map.panTo(location);
         }
 
-
-
+        // Handle map click - place marker & fetch location details
         function handleMapClick(event) {
             const clickedLocation = event.latLng;
             const service = new google.maps.places.PlacesService(map);
@@ -216,7 +194,7 @@
             }
         }
 
-
+        // ✅ Approve & Save selected location
         function approvePoint() {
             if (!selectedCoordinates.latitude || !selectedCoordinates.longitude) {
                 alert("אנא בחר מיקום על המפה.");
@@ -265,46 +243,27 @@
             });
         }
 
+        function updateQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                document.getElementById("question-container").innerText = questions[currentQuestionIndex].text;
+            } else {
+                document.getElementById("question-container").innerText = "Thank You";
+                document.getElementById("approve-btn").style.display = "none";
+                setTimeout(() => {
+                    try {
+                        window.close(); // Try closing normally
 
-        // Fetch the latest project code and initialize map
-        document.addEventListener('DOMContentLoaded', fetchProjectCode);
-
-
-        async function fetchProjectDetails(code) {
-            try {
-                // Fetch project details from the backend
-                const response = await fetch(`/get_project/${code}`);
-                //const response = await fetch(`http://127.0.0.1:8000/get_project/${code}`);  //For Debug
-                if (!response.ok) throw new Error("Failed to fetch project details.");
-                return await response.json();
-            } catch (error) {
-                console.error("Error fetching project details:", error);
-                document.getElementById("error-message").style.display = "block";
-                document.getElementById("error-message").textContent = "Failed to fetch project details. Please try again.";
-                return null;
+                        // If close fails, force close by opening an empty page
+                        window.open("about:blank", "_self").close();
+                    } catch (e) {
+                        console.error("Window close failed:", e);
+                        window.location.href = "about:blank"; // As a last resort, redirect
+                    }
+                }, 2000);
             }
         }
 
-        async function geocodeAddress(address) {
-            try {
-                // Use the Google Geocoding API to get coordinates
-                const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY`);
-                const data = await response.json();
-                if (data.status === "OK" && data.results.length > 0) {
-                    return data.results[0].geometry.location; // { lat, lng }
-                } else {
-                    throw new Error(data.error_message || "Address not found.");
-                }
-            } catch (error) {
-                console.error("Error geocoding address:", error);
-                document.getElementById("error-message").style.display = "block";
-                document.getElementById("error-message").textContent = "Unable to locate the project address. Please check the details.";
-                return null;
-            }
-        }
-
-
-        // Add async to initMap
+        // Initialize Google Map
         async function initMap() {
             console.log("Initializing map...");
 
@@ -324,7 +283,6 @@
                 zoom: 14
             });
             
-
             window.initialMarker = new google.maps.Marker({
                 position: coordinates,
                 map: map,  // ✅ Use `map` instead of `window.map`
@@ -333,7 +291,6 @@
                     url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
                 }
             });
-
 
             // Add click event listener to the map.
             map.addListener("click", handleMapClick);
@@ -375,6 +332,42 @@
             updateQuestion();
         }
 
+        async function fetchProjectDetails(code) {
+            try {
+                // Fetch project details from the backend
+                const response = await fetch(`/get_project/${code}`);
+                //const response = await fetch(`http://127.0.0.1:8000/get_project/${code}`);  //For Debug
+                if (!response.ok) throw new Error("Failed to fetch project details.");
+                return await response.json();
+            } catch (error) {
+                console.error("Error fetching project details:", error);
+                document.getElementById("error-message").style.display = "block";
+                document.getElementById("error-message").textContent = "Failed to fetch project details. Please try again.";
+                return null;
+            }
+        }
+
+        async function geocodeAddress(address) {
+            try {
+                // Use the Google Geocoding API to get coordinates
+                const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY`);
+                const data = await response.json();
+                if (data.status === "OK" && data.results.length > 0) {
+                    return data.results[0].geometry.location; // { lat, lng }
+                } else {
+                    throw new Error(data.error_message || "Address not found.");
+                }
+            } catch (error) {
+                console.error("Error geocoding address:", error);
+                document.getElementById("error-message").style.display = "block";
+                document.getElementById("error-message").textContent = "Unable to locate the project address. Please check the details.";
+                return null;
+            }
+        }
+
+        // Fetch the latest project code and initialize map
+        document.addEventListener('DOMContentLoaded', fetchProjectCode);
+        
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY&libraries=places&callback=initMap"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

@@ -209,9 +209,12 @@
         let markers = []; // Array to keep track of markers
         let ProjectCoordinates = null;
 
+        document.addEventListener("DOMContentLoaded", initMap);
+
         // Ensure the button has the data-polling attribute initialized on page load
         document.getElementById('show-results-button').setAttribute('data-polling', 'false');
 
+        // Initialize Google Map
         function initMap() {
             const map = new google.maps.Map(document.getElementById("map-container"), {
                 center: { lat: 31.7683, lng: 35.2137 }, // Centered in Jerusalem, Israel
@@ -219,9 +222,7 @@
             });
         }
 
-        document.addEventListener("DOMContentLoaded", initMap);
-
-
+        // Geocode an address and return coordinates
         async function geocodeAddress(address) {
             try {
                 if (!address.trim()) {
@@ -246,8 +247,7 @@
             }
         }
 
-
-
+        // Handle Project Creation
         document.getElementById('project-form').addEventListener('submit', async function(event) {
             event.preventDefault();
 
@@ -347,6 +347,7 @@
             }
         });
 
+        // Generate Project Code
         document.getElementById('generate-code-button').addEventListener('click', async function () {
             try {
                 const response = await fetch("/generate_project_code/");
@@ -363,92 +364,6 @@
                 console.error(error);
             }
         });
-
-        // Add event listener to the "הצג תוצאות" button
-        document.getElementById('show-results-button').addEventListener('click', function () {
-            const showResultsButton = document.getElementById('show-results-button'); // Get the button reference
-            const projectCode = document.getElementById('project-code').value;
-
-            if (!projectCode) {
-                alert("Please enter a valid project code.");
-                return;
-            }
-
-            // Change the button color when clicked (indicating it's being processed)
-            showResultsButton.style.backgroundColor = "#FF5722"; // Change to your desired color
-            showResultsButton.style.color = "white"; // Adjust text color for contrast
-
-            const mapContainer = document.getElementById("map-container");
-            if (!mapContainer) {
-                alert("Map container not found.");
-                return;
-            }
-
-            // Initialize map if not already initialized
-            if (!map) {
-                map = new google.maps.Map(mapContainer, {
-                    center: ProjectCoordinates || { lat: 31.7683, lng: 35.2137 }, // Use ProjectCoordinates or default center
-                    zoom: 14
-                });
-            }
-
-            // Clear existing markers before adding new ones
-            /*markers.forEach(marker => marker.setMap(null)); // Remove all previous markers
-            markers = []; // Clear the markers array
-            */
-            // Do not remove the first marker
-            markers.forEach(marker => {
-                if (marker !== window.initialMarker) {
-                    marker.setMap(null);
-                }
-            });
-            markers = markers.filter(marker => marker === window.initialMarker); // Keep only the initial marker
-
-            // Center the map on new project coordinates if available
-            if (ProjectCoordinates) {
-                map.setCenter(ProjectCoordinates);
-            } else {
-                map.setCenter({ lat: 31.7683, lng: 35.2137 }); // Default center if no coordinates
-            }
-
-            map.setZoom(14); // Adjust zoom level
-
-            // Start polling if needed
-            let pollingInterval;
-            async function fetchAndUpdateMarkers() {
-                try {
-                    const response = await fetch(`/get_locations/${projectCode}`);
-                    const data = await response.json();
-
-                    if (response.ok && data.locations) {
-                        // Add new markers
-                        data.locations.forEach(location => {
-                            const marker = new google.maps.Marker({
-                                position: { lat: location.latitude, lng: location.longitude },
-                                map: map,
-                                title: location.name
-                            });
-                            markers.push(marker); // Add marker to the array
-                        });
-                    } else {
-                        console.error("Error fetching locations:", data.detail || "Unknown error");
-                    }
-                } catch (error) {
-                    console.error("Error during marker fetch:", error);
-                }
-            }
-
-            // Fetch markers and update the map
-            fetchAndUpdateMarkers();
-            pollingInterval = setInterval(fetchAndUpdateMarkers, 3000); // Poll every 3 seconds
-
-            // Optional: Reset the button color after a certain time, e.g., after fetching markers
-            setTimeout(() => {
-                showResultsButton.style.backgroundColor = ""; // Reset to original color
-                showResultsButton.style.color = ""; // Reset text color
-            }, 3000); // Change the delay time (in milliseconds) as needed
-        });
-
 
         document.getElementById('create-project-button').addEventListener('click', function() {
             const formContainer = document.getElementById('form-container');
@@ -560,6 +475,88 @@
                 console.error(error);
             }
         });
+
+        // Show Results Button
+        document.getElementById('show-results-button').addEventListener('click', function () {
+            const showResultsButton = document.getElementById('show-results-button'); // Get the button reference
+            const projectCode = document.getElementById('project-code').value;
+
+            if (!projectCode) {
+                alert("Please enter a valid project code.");
+                return;
+            }
+
+            // Change the button color when clicked (indicating it's being processed)
+            showResultsButton.style.backgroundColor = "#FF5722"; // Change to your desired color
+            showResultsButton.style.color = "white"; // Adjust text color for contrast
+
+            const mapContainer = document.getElementById("map-container");
+            if (!mapContainer) {
+                alert("Map container not found.");
+                return;
+            }
+
+            // Initialize map if not already initialized
+            if (!map) {
+                map = new google.maps.Map(mapContainer, {
+                    center: ProjectCoordinates || { lat: 31.7683, lng: 35.2137 }, // Use ProjectCoordinates or default center
+                    zoom: 14
+                });
+            }
+
+            // Do not remove the first marker
+            markers.forEach(marker => {
+                if (marker !== window.initialMarker) {
+                    marker.setMap(null);
+                }
+            });
+            markers = markers.filter(marker => marker === window.initialMarker); // Keep only the initial marker
+
+            // Center the map on new project coordinates if available
+            if (ProjectCoordinates) {
+                map.setCenter(ProjectCoordinates);
+            } else {
+                map.setCenter({ lat: 31.7683, lng: 35.2137 }); // Default center if no coordinates
+            }
+
+            map.setZoom(14); // Adjust zoom level
+
+            // Start polling if needed
+            let pollingInterval;
+            async function fetchAndUpdateMarkers() {
+                try {
+                    const response = await fetch(`/get_locations/${projectCode}`);
+                    const data = await response.json();
+
+                    if (response.ok && data.locations) {
+                        // Add new markers
+                        data.locations.forEach(location => {
+                            const marker = new google.maps.Marker({
+                                position: { lat: location.latitude, lng: location.longitude },
+                                map: map,
+                                title: location.name
+                            });
+                            markers.push(marker); // Add marker to the array
+                        });
+                    } else {
+                        console.error("Error fetching locations:", data.detail || "Unknown error");
+                    }
+                } catch (error) {
+                    console.error("Error during marker fetch:", error);
+                }
+            }
+
+            // Fetch markers and update the map
+            fetchAndUpdateMarkers();
+            pollingInterval = setInterval(fetchAndUpdateMarkers, 3000); // Poll every 3 seconds
+
+            // Optional: Reset the button color after a certain time, e.g., after fetching markers
+            setTimeout(() => {
+                showResultsButton.style.backgroundColor = ""; // Reset to original color
+                showResultsButton.style.color = ""; // Reset text color
+            }, 3000); // Change the delay time (in milliseconds) as needed
+        });
+
 
 
     </script>
