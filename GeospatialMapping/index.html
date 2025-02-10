@@ -392,6 +392,9 @@
                 
                 // Position the button at the marker location
                 positionApproveButton(place.geometry.location);
+
+                // Click event for saving location
+                approveBtn.onclick = approvePoint;
             });
 
             // Click event for saving location
