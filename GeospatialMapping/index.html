@@ -241,12 +241,16 @@
             const overlay = new google.maps.OverlayView();
             overlay.draw = function () {};
             overlay.setMap(map);
+            
+            google.maps.event.addListenerOnce(map, "idle", function () {
+                const projection = overlay.getProjection();
+                if (!projection) return;
 
-            const projection = overlay.getProjection();
-            const point = projection.fromLatLngToContainerPixel(location);
+                const point = projection.fromLatLngToContainerPixel(location);
 
-            approveBtn.style.left = `${point.x}px`;
-            approveBtn.style.top = `${point.y}px`;
+                approveBtn.style.left = `${point.x}px`;
+                approveBtn.style.top = `${point.y}px`;
+            });
         }
 
         // ✅ Approve & Save selected location
@@ -363,12 +367,16 @@
             searchBox.addListener("places_changed", () => {
                 const places = searchBox.getPlaces();
                 if (places.length === 0) return;
-
-                // Clear old marker
-                //if (marker) marker.setMap(null);
-
                 const place = places[0];
 
+                // Remove previous marker and button
+                if (window.currentMarker) {
+                    window.currentMarker.setMap(null);
+                }
+                if (approveBtn) {
+                    approveBtn.remove();
+                    approveBtn = null;
+                }
                 setMarkerAtLocation(place.geometry.location, place.name || "Searched Location");
 
                 // Update the map to zoom and center on the place
@@ -380,6 +388,22 @@
                 selectedCoordinates.longitude = place.geometry.location.lng();
                 selectedCoordinates.name = place.name || "Unnamed Location";
             });
+
+            // Create the small green ✔ button
+            approveBtn = document.createElement("button");
+            approveBtn.innerHTML = "✔";
+            approveBtn.classList.add("approve-marker-btn");
+            document.getElementById("map").appendChild(approveBtn);
+
+            // Position the button at the marker location
+            positionApproveButton(place.geometry.location);
+
+            // Click event for saving location
+            approveBtn.onclick = approvePoint;
+
+            // Center map on the searched location
+            map.panTo(place.geometry.location);
+            map.setZoom(15);
 
             // Add event listener for approve button
             document.getElementById("approve-btn").addEventListener("click", approvePoint);
