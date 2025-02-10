@@ -15,7 +15,27 @@
             background-color: #f8f9fa;
             z-index: 1;
         }
-        #map { height: 85vh; width: 100%; position: relative; }
+        #map { 
+            height: 85vh; 
+            width: 100%; 
+            position: relative; 
+        }
+        .approve-marker-btn {
+            background-color: green;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: absolute;
+            transform: translate(-50%, -50%);
+        }
         #approve-btn {
             position: absolute;
             bottom: 3px;
@@ -91,6 +111,7 @@
         let searchBox;
         let selectedCoordinates = { latitude: null, longitude: null, name: null };
         let projectCode = null; 
+        let approveBtn = null; 
 
         // Fetch project details and initialize the map
         async function fetchProjectCode() {
@@ -141,13 +162,34 @@
             if (window.currentMarker) {
                 window.currentMarker.setMap(null);
             }
+            if (window.approveBtn) {
+                window.approveBtn.remove();
+            }
+            if (approveBtn) {
+                approveBtn.remove();
+                approveBtn = null;
+            }
 
             // Place a new marker
             window.currentMarker = new google.maps.Marker({
                 position: clickedLocation,
                 map: map,
-                title: "Searching..."
+                title: "Selected Location"
             });
+
+            // Create a small green ✔ button next to the marker
+                approveBtn = document.createElement("button");
+                approveBtn.innerHTML = "✔";
+                approveBtn.classList.add("approve-marker-btn");
+
+                // Append button to map container
+                document.getElementById("map").appendChild(approveBtn);
+
+                // Position the button correctly
+                positionApproveButton(clickedLocation);
+
+                // Click event for saving location
+                approveBtn.onclick = approvePoint;
 
             // Reset selectedCoordinates
             selectedCoordinates = {
@@ -192,6 +234,19 @@
                     }
                 });
             }
+        }
+
+        // Position the V button
+        function positionApproveButton(location) {
+            const overlay = new google.maps.OverlayView();
+            overlay.draw = function () {};
+            overlay.setMap(map);
+
+            const projection = overlay.getProjection();
+            const point = projection.fromLatLngToContainerPixel(location);
+
+            approveBtn.style.left = `${point.x}px`;
+            approveBtn.style.top = `${point.y}px`;
         }
 
         // ✅ Approve & Save selected location
@@ -329,6 +384,11 @@
             // Add event listener for approve button
             document.getElementById("approve-btn").addEventListener("click", approvePoint);
 
+            google.maps.event.addListener(map, "bounds_changed", () => {
+                if (window.currentMarker && approveBtn) {
+                    positionApproveButton(window.currentMarker.getPosition());
+                }
+            });         
             updateQuestion();
         }
 
