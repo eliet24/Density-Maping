@@ -241,16 +241,12 @@
             const overlay = new google.maps.OverlayView();
             overlay.draw = function () {};
             overlay.setMap(map);
-            
-            google.maps.event.addListenerOnce(map, "idle", function () {
-                const projection = overlay.getProjection();
-                if (!projection) return;
 
-                const point = projection.fromLatLngToContainerPixel(location);
+            const projection = overlay.getProjection();
+            const point = projection.fromLatLngToContainerPixel(location);
 
-                approveBtn.style.left = `${point.x}px`;
-                approveBtn.style.top = `${point.y}px`;
-            });
+            approveBtn.style.left = `${point.x}px`;
+            approveBtn.style.top = `${point.y}px`;
         }
 
         // ✅ Approve & Save selected location
