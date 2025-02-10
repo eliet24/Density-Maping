@@ -383,16 +383,16 @@
                 selectedCoordinates.latitude = place.geometry.location.lat();
                 selectedCoordinates.longitude = place.geometry.location.lng();
                 selectedCoordinates.name = place.name || "Unnamed Location";
+                   
+                // Create the small green ✔ button
+                approveBtn = document.createElement("button");
+                approveBtn.innerHTML = "✔";
+                approveBtn.classList.add("approve-marker-btn");
+                document.getElementById("map").appendChild(approveBtn);
+                
+                // Position the button at the marker location
+                positionApproveButton(place.geometry.location);
             });
-
-            // Create the small green ✔ button
-            approveBtn = document.createElement("button");
-            approveBtn.innerHTML = "✔";
-            approveBtn.classList.add("approve-marker-btn");
-            document.getElementById("map").appendChild(approveBtn);
-
-            // Position the button at the marker location
-            positionApproveButton(place.geometry.location);
 
             // Click event for saving location
             approveBtn.onclick = approvePoint;
