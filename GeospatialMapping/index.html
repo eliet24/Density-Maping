@@ -228,10 +228,17 @@
             function fallbackToGeocoder(location) {
                 const geocoder = new google.maps.Geocoder();
                 geocoder.geocode({ location }, (results, status) => {
-                    if (status === "OK" && results[0]) {
-                        selectedCoordinates.name = results[0].formatted_address;
-                        console.log("✅ Reverse geocoded:", selectedCoordinates.name);
-                        window.currentMarker.setTitle(selectedCoordinates.name);
+                    if (status === "OK" && results.length > 0) {
+                        const address = results[0].formatted_address;
+                        if (address) {
+                            selectedCoordinates.name = address; // Set address if found
+                            console.log("✅ Reverse geocoded:", selectedCoordinates.name);
+                            window.currentMarker.setTitle(selectedCoordinates.name); // Update marker title with address
+                        } else {
+                            console.error("Failed to retrieve address from geocoder.");
+                        }
+                    } else {
+                        console.error("Geocode was not successful for the following reason: " + status);
                     }
                 });
             }
