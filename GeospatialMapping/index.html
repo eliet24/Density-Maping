@@ -359,6 +359,8 @@
             const input = document.getElementById("pac-input");
             searchBox = new google.maps.places.SearchBox(input);
 
+            updateQuestion();
+
             // Bias the SearchBox results towards the current map view
             /*
             map.addListener("bounds_changed", () => {
@@ -412,8 +414,7 @@
 
             // Add event listener for approve button
             document.getElementById("approve-btn").addEventListener("click", approvePoint);
-      
-            updateQuestion();
+         
         }
 
         async function fetchProjectDetails(code) {
