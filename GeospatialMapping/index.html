@@ -162,9 +162,11 @@
             if (window.currentMarker) {
                 window.currentMarker.setMap(null);
             }
+
             if (window.approveBtn) {
                 window.approveBtn.remove();
             }
+
             if (approveBtn) {
                 approveBtn.remove();
                 approveBtn = null;
@@ -178,18 +180,17 @@
             });
 
             // Create a small green ✔ button next to the marker
-                approveBtn = document.createElement("button");
-                approveBtn.innerHTML = "✔";
-                approveBtn.classList.add("approve-marker-btn");
+            approveBtn = document.createElement("button");
+            approveBtn.innerHTML = "✔";
+            approveBtn.classList.add("approve-marker-btn");
+            // Append button to map container
+            document.getElementById("map").appendChild(approveBtn);
 
-                // Append button to map container
-                document.getElementById("map").appendChild(approveBtn);
+            // Position the button correctly
+            positionApproveButton(clickedLocation);
 
-                // Position the button correctly
-                positionApproveButton(clickedLocation);
-
-                // Click event for saving location
-                approveBtn.onclick = approvePoint;
+            // Click event for saving location
+            approveBtn.onclick = approvePoint;
 
             // Reset selectedCoordinates
             selectedCoordinates = {
@@ -236,7 +237,7 @@
             }
         }
 
-        // Position the V button
+        // Position the V button next to the marker when placed
         function positionApproveButton(location) {
             const overlay = new google.maps.OverlayView();
             overlay.draw = function () {};
@@ -245,9 +246,12 @@
             const projection = overlay.getProjection();
             const point = projection.fromLatLngToContainerPixel(location);
 
+            // Keep the button in the same position relative to the marker
+            approveBtn.style.position = "absolute";
             approveBtn.style.left = `${point.x}px`;
             approveBtn.style.top = `${point.y}px`;
         }
+
 
         // ✅ Approve & Save selected location
         function approvePoint() {
@@ -257,10 +261,11 @@
             }
 
             // Ensure name is always set to something meaningful
+            /*
             if (!selectedCoordinates.name || selectedCoordinates.name === "Unknown Location") {
                 selectedCoordinates.name = "Unnamed Location";
             }
-
+            */
             const currentQuestion = questions[currentQuestionIndex];
 
             fetch("/save_location/", {
@@ -355,10 +360,11 @@
             searchBox = new google.maps.places.SearchBox(input);
 
             // Bias the SearchBox results towards the current map view
+            /*
             map.addListener("bounds_changed", () => {
                 searchBox.setBounds(map.getBounds());
             });
-
+            */
             // Listen for search results
             searchBox.addListener("places_changed", () => {
                 const places = searchBox.getPlaces();
@@ -406,12 +412,7 @@
 
             // Add event listener for approve button
             document.getElementById("approve-btn").addEventListener("click", approvePoint);
-
-            google.maps.event.addListener(map, "bounds_changed", () => {
-                if (window.currentMarker && approveBtn) {
-                    positionApproveButton(window.currentMarker.getPosition());
-                }
-            });         
+      
             updateQuestion();
         }
 
