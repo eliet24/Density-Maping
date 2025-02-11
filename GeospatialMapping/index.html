@@ -217,28 +217,28 @@
                                 selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
                                 console.log("✅ Business found:", selectedCoordinates.name);
                                 window.currentMarker.setTitle(selectedCoordinates.name);
+                            } else {
+                                console.error("Error fetching place details:", status);
+                                fallbackToGeocoder(clickedLocation);
                             }
                         }
                     );
                 } else {
+                    console.error("Nearby search failed:", status);
                     fallbackToGeocoder(clickedLocation);
                 }
             });
 
+            // Fallback method if nearbySearch fails
             function fallbackToGeocoder(location) {
                 const geocoder = new google.maps.Geocoder();
                 geocoder.geocode({ location }, (results, status) => {
-                    if (status === "OK" && results.length > 0) {
-                        const address = results[0].formatted_address;
-                        if (address) {
-                            selectedCoordinates.name = address; // Set address if found
-                            console.log("✅ Reverse geocoded:", selectedCoordinates.name);
-                            window.currentMarker.setTitle(selectedCoordinates.name); // Update marker title with address
-                        } else {
-                            console.error("Failed to retrieve address from geocoder.");
-                        }
+                    if (status === "OK" && results[0]) {
+                        selectedCoordinates.name = results[0].formatted_address;
+                        console.log("✅ Reverse geocoded:", selectedCoordinates.name);
+                        window.currentMarker.setTitle(selectedCoordinates.name);
                     } else {
-                        console.error("Geocode was not successful for the following reason: " + status);
+                        console.error("Geocoder failed:", status);
                     }
                 });
             }
