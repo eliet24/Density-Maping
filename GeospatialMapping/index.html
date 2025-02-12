@@ -250,17 +250,28 @@
         // Position the V button next to the marker when placed
         function positionApproveButton(location) {
             const overlay = new google.maps.OverlayView();
-            overlay.draw = function () {};
-            overlay.setMap(map);
 
-            const projection = overlay.getProjection();
-            const point = projection.fromLatLngToContainerPixel(location);
+            overlay.onAdd = function () {
+                const layer = this.getPanes().overlayMouseTarget;
+                layer.appendChild(approveBtn);
+            };
 
-            // Keep the button in the same position relative to the marker
-            approveBtn.style.position = "absolute";
-            approveBtn.style.left = `${point.x}px`;
-            approveBtn.style.top = `${point.y}px`;
+            overlay.draw = function () {
+                const projection = this.getProjection();
+                if (!projection) return;
+
+                const position = projection.fromLatLngToDivPixel(location);
+
+                // ✅ Ensure the button is properly positioned next to the marker
+                approveBtn.style.left = `${position.x}px`;
+                approveBtn.style.top = `${position.y}px`;
+                approveBtn.style.position = "absolute";
+                approveBtn.style.transform = "translate(-50%, -50%)"; // Center it over the location
+            };
+
+            overlay.setMap(map); // Attach to the map
         }
+
 
 
         // ✅ Approve & Save selected location
