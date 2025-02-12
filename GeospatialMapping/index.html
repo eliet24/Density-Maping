@@ -179,25 +179,28 @@
                 title: "Selected Location"
             });
 
-            // Create a small green ✔ button next to the marker
-            approveBtn = document.createElement("button");
-            approveBtn.innerHTML = "✔";
-            approveBtn.classList.add("approve-marker-btn");
-            // Append button to map container
-            document.getElementById("map").appendChild(approveBtn);
-
-            // Position the button correctly
-            positionApproveButton(clickedLocation);
-
-            // Click event for saving location
-            approveBtn.onclick = approvePoint;
-
             // Reset selectedCoordinates
             selectedCoordinates = {
                 latitude: clickedLocation.lat(),
                 longitude: clickedLocation.lng(),
                 name: ""
             };
+
+            // Create a small green ✔ button next to the marker
+            if (!approveBtn) {
+                approveBtn = document.createElement("button");
+                approveBtn.innerHTML = "✔";
+                approveBtn.classList.add("approve-marker-btn");
+                document.getElementById("map").appendChild(approveBtn);
+            }
+
+            // Position the button correctly
+            setTimeout(() => {
+                positionApproveButton(clickedLocation);
+            }, 300); // Small delay to ensure map updates
+
+            // Click event for saving location
+            approveBtn.onclick = approvePoint;
 
             // Search for business
             const request = {
@@ -405,10 +408,12 @@
                 selectedCoordinates.name = place.name || "Unnamed Location";
                    
                 // Create the small green ✔ button
-                approveBtn = document.createElement("button");
-                approveBtn.innerHTML = "✔";
-                approveBtn.classList.add("approve-marker-btn");
-                document.getElementById("map").appendChild(approveBtn);
+                if (!approveBtn) {
+                    approveBtn = document.createElement("button");
+                    approveBtn.innerHTML = "✔";
+                    approveBtn.classList.add("approve-marker-btn");
+                    document.getElementById("map").appendChild(approveBtn);
+                }
                 
                 // Position the button after a small delay to ensure the map has updated
                 setTimeout(() => {
