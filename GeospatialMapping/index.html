@@ -151,6 +151,10 @@
 
             // Center map on new location
             map.panTo(location);
+
+            // Ensure the button is created and position it next to the marker
+            ensureApproveButton();
+            positionApproveButton(location);
         }
 
         // Handle map click - place marker & fetch location details
