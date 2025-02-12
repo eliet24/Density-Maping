@@ -260,12 +260,25 @@
             const point = projection.fromLatLngToPoint(location);
             if (!point) return;
 
-            // Directly position the button at the correct location
-            approveBtn.style.left = `${point.x}px`;
-            approveBtn.style.top = `${point.y}px`;
+            const scale = Math.pow(2, map.getZoom());
+            const worldPoint = overlayProjection.fromLatLngToPoint(location);
+            const topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
+            const bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
+            const p = new google.maps.Point(
+                (worldPoint.x - bottomLeft.x) * scale,
+                (worldPoint.y - topRight.y) * scale
+            );
+
+            // Position the button next to the marker
+            approveBtn.style.left = `${p.x + 30}px`; // 30px offset to the right of the marker
+            approveBtn.style.top = `${p.y}px`;
             approveBtn.style.position = "absolute";
-            approveBtn.style.transform = "translate(-50%, -50%)"; // Center it
-            approveBtn.style.display = "block"; // Ensure it's visible
+            approveBtn.style.display = "block";
+
+            // Add an event listener to update the button position when the map moves
+            map.addListener('bounds_changed', () => {
+                positionApproveButton(location);
+            });
         }
 
         function ensureApproveButton() {
