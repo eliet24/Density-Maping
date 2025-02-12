@@ -154,7 +154,9 @@
 
             // Ensure the button is created and position it next to the marker
             ensureApproveButton();
-            positionApproveButton(location);
+            setTimeout(() => {
+                positionApproveButton(location); // Small delay to ensure map updates
+            }, 300);
         }
 
         // Handle map click - place marker & fetch location details
