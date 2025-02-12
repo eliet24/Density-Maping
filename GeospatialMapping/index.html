@@ -34,7 +34,7 @@
             justify-content: center;
             cursor: pointer;
             position: absolute;
-            z-index: 1000;
+            transform: translate(-50%, -50%);
         }
         #approve-btn {
             position: absolute;
@@ -137,10 +137,7 @@
         function setMarkerAtLocation(location, name = "Selected Location") {
             // Clear existing marker if any
             if (marker) marker.setMap(null);
-            if (approveBtn) {
-                approveBtn.remove();
-                approveBtn = null;
-            }
+
             // Create new marker
             marker = new google.maps.Marker({
                 map: map,
@@ -155,11 +152,9 @@
             // Center map on new location
             map.panTo(location);
 
-            // Wait for map to settle before positioning button
-            google.maps.event.addListenerOnce(map, 'idle', () => {
-                ensureApproveButton();
-                positionApproveButton(location);
-            });
+            // Ensure the button is created and position it next to the marker
+            ensureApproveButton();
+            positionApproveButton(location);
         }
 
         // Handle map click - place marker & fetch location details
@@ -167,15 +162,22 @@
             const clickedLocation = event.latLng;
             const service = new google.maps.places.PlacesService(map);
 
-            // Clear existing marker and button
-            if (marker) marker.setMap(null);
+            // Remove previous marker
+            if (window.currentMarker) {
+                window.currentMarker.setMap(null);
+            }
+
+            if (window.approveBtn) {
+                window.approveBtn.remove();
+            }
+
             if (approveBtn) {
                 approveBtn.remove();
                 approveBtn = null;
             }
 
-            // Set the new marker
-            marker = new google.maps.Marker({
+            // Place a new marker
+            window.currentMarker = new google.maps.Marker({
                 position: clickedLocation,
                 map: map,
                 title: "Selected Location"
@@ -188,11 +190,13 @@
                 name: ""
             };
 
-            // Wait for map to settle before positioning button
-            google.maps.event.addListenerOnce(map, 'idle', () => {
-                ensureApproveButton();
+           // Ensure the button is created
+            ensureApproveButton();
+
+            // Position the button correctly
+            setTimeout(() => {
                 positionApproveButton(clickedLocation);
-            });
+            }, 300); // Small delay to ensure map updates
 
             // Search for business
             const request = {
@@ -241,39 +245,37 @@
 
         // Position the V button next to the marker when placed
         function positionApproveButton(location) {
-            if (!approveBtn || !map || !location) return;
+            if (!approveBtn) return; // Ensure the button exists
 
-            // Get the overlay projection
-            const overlay = new google.maps.OverlayView();
-            overlay.draw = function() {}; // Required but empty
-            overlay.setMap(map);
+            // Get the projection immediately
+            const projection = map.getProjection();
+            if (!projection) {
+                setTimeout(() => positionApproveButton(location), 100); // Retry if not ready
+                return;
+            }
 
-            // Wait for projection to be ready
-            google.maps.event.addListenerOnce(overlay, 'projection_changed', () => {
-                const projection = overlay.getProjection();
-                if (!projection) return;
+            // Convert LatLng to pixel coordinates
+            const point = projection.fromLatLngToPoint(location);
+            if (!point) return;
 
-                const point = projection.fromLatLngToDivPixel(location);
-                if (!point) return;
+            // Directly position the button at the correct location
+            approveBtn.style.left = `${point.x}px`;
+            approveBtn.style.top = `${point.y}px`;
+            approveBtn.style.position = "absolute";
+            approveBtn.style.transform = "translate(-50%, -50%)"; // Center it
+            approveBtn.style.display = "block"; // Ensure it's visible
+        }
 
-                // Position the button next to the marker
-                approveBtn.style.left = `${point.x + 25}px`; // 25px offset to the right
-                approveBtn.style.top = `${point.y}px`;
-                approveBtn.style.transform = 'translate(0, -50%)';
+        function ensureApproveButton() {
+            if (!approveBtn) {
+                approveBtn = document.createElement("button");
+                approveBtn.innerHTML = "✔";
+                approveBtn.classList.add("approve-marker-btn");
+                document.getElementById("map").appendChild(approveBtn);
+            }
 
-                // Update position when map changes
-                const updatePosition = () => {
-                    const newPoint = projection.fromLatLngToDivPixel(location);
-                    if (newPoint) {
-                        approveBtn.style.left = `${newPoint.x + 25}px`;
-                        approveBtn.style.top = `${newPoint.y}px`;
-                    }
-                };
-
-                // Clear existing listeners and add new one
-                google.maps.event.clearListeners(map, 'bounds_changed');
-                map.addListener('bounds_changed', updatePosition);
-            });
+            // Ensure the button is always clickable
+            approveBtn.onclick = approvePoint;
         }
 
 
@@ -433,19 +435,8 @@
             map.setZoom(15);
 
             // Add event listener for approve button
-            document.getElementById("approve-btn").addEventListener("click", approvePoint);     
-        }
-
-
-        // Update the ensureApproveButton function
-        function ensureApproveButton() {
-            if (!approveBtn) {
-                approveBtn = document.createElement("button");
-                approveBtn.innerHTML = "✔";
-                approveBtn.classList.add("approve-marker-btn");
-                document.getElementById("map").appendChild(approveBtn);
-                approveBtn.onclick = approvePoint;
-            }
+            document.getElementById("approve-btn").addEventListener("click", approvePoint);
+         
         }
 
         async function fetchProjectDetails(code) {
