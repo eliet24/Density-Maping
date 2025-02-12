@@ -244,11 +244,13 @@
         }
 
         function createApproveButton() {
-            // Create button only once
+            // Create the button only once
             if (!approveBtn) {
                 approveBtn = document.createElement("button");
                 approveBtn.innerHTML = "✔"; // Green V button
                 approveBtn.classList.add("approve-marker-btn");
+
+                // Append it directly to the map container
                 document.getElementById("map").appendChild(approveBtn);
             }
         }
@@ -259,7 +261,7 @@
 
             overlay.onAdd = function () {
                 const layer = this.getPanes().overlayMouseTarget;
-                layer.appendChild(approveBtn); // Attach the button to the overlay
+                layer.appendChild(approveBtn); // Attach the button to the overlay pane
             };
 
             overlay.draw = function () {
@@ -274,10 +276,11 @@
                 approveBtn.style.left = `${position.x}px`;
                 approveBtn.style.top = `${position.y}px`;
                 approveBtn.style.transform = "translate(-50%, -50%)"; // Center the button
+                approveBtn.style.zIndex = 100; // Ensure the button stays on top of map layers
+                approveBtn.style.pointerEvents = "auto"; // Enable button click events
 
-                // Set button's visibility and pointer events to ensure clicks are detected
-                approveBtn.style.pointerEvents = "auto"; // Enable click events on the button
-                approveBtn.style.display = "block"; // Ensure it's visible
+                // Set visibility to ensure the button is always visible and functional
+                approveBtn.style.display = "block";
             };
 
             overlay.setMap(map); // Attach to the map to make it positionable
