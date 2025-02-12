@@ -186,8 +186,13 @@
                 name: ""
             };
 
-           // Ensure the button is created
-            ensureApproveButton();
+            // Create a small green ✔ button next to the marker
+            if (!approveBtn) {
+                approveBtn = document.createElement("button");
+                approveBtn.innerHTML = "✔";
+                approveBtn.classList.add("approve-marker-btn");
+                document.getElementById("map").appendChild(approveBtn);
+            }
 
             // Position the button correctly
             setTimeout(() => {
@@ -244,38 +249,29 @@
 
         // Position the V button next to the marker when placed
         function positionApproveButton(location) {
-            if (!approveBtn) return; // Ensure the button exists
+            const overlay = new google.maps.OverlayView();
 
-            // Get the projection immediately
-            const projection = map.getProjection();
-            if (!projection) {
-                setTimeout(() => positionApproveButton(location), 100); // Retry if not ready
-                return;
-            }
+            overlay.onAdd = function () {
+                const layer = this.getPanes().overlayMouseTarget;
+                layer.appendChild(approveBtn);
+            };
 
-            // Convert LatLng to pixel coordinates
-            const point = projection.fromLatLngToPoint(location);
-            if (!point) return;
+            overlay.draw = function () {
+                const projection = this.getProjection();
+                if (!projection) return;
 
-            // Directly position the button at the correct location
-            approveBtn.style.left = `${point.x}px`;
-            approveBtn.style.top = `${point.y}px`;
-            approveBtn.style.position = "absolute";
-            approveBtn.style.transform = "translate(-50%, -50%)"; // Center it
-            approveBtn.style.display = "block"; // Ensure it's visible
+                const position = projection.fromLatLngToDivPixel(location);
+
+                // ✅ Ensure the button is properly positioned next to the marker
+                approveBtn.style.left = `${position.x}px`;
+                approveBtn.style.top = `${position.y}px`;
+                approveBtn.style.position = "absolute";
+                approveBtn.style.transform = "translate(-50%, -50%)"; // Center it over the location
+            };
+
+            overlay.setMap(map); // Attach to the map
         }
 
-        function ensureApproveButton() {
-            if (!approveBtn) {
-                approveBtn = document.createElement("button");
-                approveBtn.innerHTML = "✔";
-                approveBtn.classList.add("approve-marker-btn");
-                document.getElementById("map").appendChild(approveBtn);
-            }
-
-            // Ensure the button is always clickable
-            approveBtn.onclick = approvePoint;
-        }
 
 
         // ✅ Approve & Save selected location
@@ -285,6 +281,12 @@
                 return;
             }
 
+            // Ensure name is always set to something meaningful
+            /*
+            if (!selectedCoordinates.name || selectedCoordinates.name === "Unknown Location") {
+                selectedCoordinates.name = "Unnamed Location";
+            }
+            */
             const currentQuestion = questions[currentQuestionIndex];
 
             fetch("/save_location/", {
@@ -416,14 +418,21 @@
                 selectedCoordinates.longitude = place.geometry.location.lng();
                 selectedCoordinates.name = place.name || "Unnamed Location";
                    
-                // Ensure the button is created
-                ensureApproveButton();
+                // Create the small green ✔ button
+                if (!approveBtn) {
+                    approveBtn = document.createElement("button");
+                    approveBtn.innerHTML = "✔";
+                    approveBtn.classList.add("approve-marker-btn");
+                    document.getElementById("map").appendChild(approveBtn);
+                }
                 
                 // Position the button after a small delay to ensure the map has updated
                 setTimeout(() => {
                     positionApproveButton(place.geometry.location);
                 }, 300); // Delay ensures Google Maps has updated before positioning
 
+                // Click event for saving location
+                approveBtn.onclick = approvePoint;
             });
 
             // Click event for saving location
