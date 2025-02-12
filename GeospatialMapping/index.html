@@ -135,22 +135,18 @@
         
         // 📍 Set marker on the map
         function setMarkerAtLocation(location, name = "Selected Location") {
-            // Clear existing marker if any
-            if (marker) marker.setMap(null);
+            createApproveButton(); // Ensure the button is created
+            if (marker) marker.setMap(null); // Remove previous marker if any
 
-            // Create new marker
+            // Create a new marker at the clicked location
             marker = new google.maps.Marker({
                 map: map,
-                position: location
+                position: location,
+                title: name
             });
 
-            // Update selected coordinates
-            selectedCoordinates.latitude = location.lat();
-            selectedCoordinates.longitude = location.lng();
-            selectedCoordinates.name = name;
-
-            // Center map on new location
-            map.panTo(location);
+            // Position the approve button next to the marker
+            positionApproveButton(location);
         }
 
         // Handle map click - place marker & fetch location details
@@ -247,20 +243,46 @@
             }
         }
 
-        // Position the V button next to the marker when placed
-        function positionApproveButton(location) {
-            const overlay = new google.maps.OverlayView();
-            overlay.draw = function () {};
-            overlay.setMap(map);
-
-            const projection = overlay.getProjection();
-            const point = projection.fromLatLngToContainerPixel(location);
-
-            // Keep the button in the same position relative to the marker
-            approveBtn.style.position = "absolute";
-            approveBtn.style.left = `${point.x}px`;
-            approveBtn.style.top = `${point.y}px`;
+        function createApproveButton() {
+            // Create button only once
+            if (!approveBtn) {
+                approveBtn = document.createElement("button");
+                approveBtn.innerHTML = "✔"; // Green V button
+                approveBtn.classList.add("approve-marker-btn");
+                document.getElementById("map").appendChild(approveBtn);
+            }
         }
+
+        function positionApproveButton(location) {
+            // Use OverlayView for correct position calculation
+            const overlay = new google.maps.OverlayView();
+
+            overlay.onAdd = function () {
+                const layer = this.getPanes().overlayMouseTarget;
+                layer.appendChild(approveBtn); // Attach the button to the overlay
+            };
+
+            overlay.draw = function () {
+                const projection = this.getProjection();
+                if (!projection) return;
+
+                // Calculate position based on LatLng
+                const position = projection.fromLatLngToDivPixel(location);
+
+                // Adjust button position relative to the marker
+                approveBtn.style.position = "absolute";
+                approveBtn.style.left = `${position.x}px`;
+                approveBtn.style.top = `${position.y}px`;
+                approveBtn.style.transform = "translate(-50%, -50%)"; // Center the button
+
+                // Set button's visibility and pointer events to ensure clicks are detected
+                approveBtn.style.pointerEvents = "auto"; // Enable click events on the button
+                approveBtn.style.display = "block"; // Ensure it's visible
+            };
+
+            overlay.setMap(map); // Attach to the map to make it positionable
+        }
+
 
 
         // ✅ Approve & Save selected location
