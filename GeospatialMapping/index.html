@@ -128,6 +128,18 @@
         let projectCode = null; 
         let approveBtn = null; 
 
+        // Function to create the approve button only once
+        function initializeApproveButton() {
+            if (!approveBtn) {
+                approveBtn = document.createElement("button");
+                approveBtn.innerHTML = '<i class="fas fa-check"></i>';
+                approveBtn.classList.add("approve-marker-btn");
+                approveBtn.style.display = 'none'; // Hide initially
+                document.getElementById("map").appendChild(approveBtn);
+                approveBtn.onclick = approvePoint;
+            }
+        }
+
         // Fetch project details and initialize the map
         async function fetchProjectCode() {
             try {
@@ -184,6 +196,7 @@
                 window.currentMarker.setMap(null);
             }
 
+            /*
             if (window.approveBtn) {
                 window.approveBtn.remove();
             }
@@ -192,14 +205,14 @@
                 approveBtn.remove();
                 approveBtn = null;
             }
-
+            */
             // Place a new marker
             window.currentMarker = new google.maps.Marker({
                 position: clickedLocation,
                 map: map,
                 title: "Selected Location"
             });
-
+/*
             // Create a small green ✔ button next to the marker
             if (!approveBtn) {
                 approveBtn = document.createElement("button");
@@ -215,6 +228,10 @@
 
             // Click event for saving location
             approveBtn.onclick = approvePoint;
+*/
+            // Show and position the approve button
+            approveBtn.style.display = 'block';
+            positionApproveButton(clickedLocation);
 
             console.log("📍 Clicked Location:", selectedCoordinates.latitude, selectedCoordinates.longitude);
 
@@ -319,9 +336,8 @@
             // Use OverlayView for correct position calculation
             const overlay = new google.maps.OverlayView();
 
-            overlay.onAdd = function () {
+            overlay.onAdd = function() {
                 const layer = this.getPanes().overlayMouseTarget;
-                layer.appendChild(approveBtn); // Attach the button to the overlay pane
             };
 
             overlay.draw = function () {
@@ -332,17 +348,12 @@
                 const position = projection.fromLatLngToDivPixel(location);
 
                 // Adjust button position relative to the marker
-                approveBtn.style.position = "absolute";
                 approveBtn.style.left = `${position.x}px`;
                 approveBtn.style.top = `${position.y}px`;
-                approveBtn.style.transform = "translate(-50%, -50%)"; // Center the button
-                approveBtn.style.zIndex = 100; // Ensure the button stays on top of map layers
-                approveBtn.style.pointerEvents = "auto"; // Enable button click events
-
-                // Set visibility to ensure the button is always visible and functional
+                approveBtn.style.transform = "translate(-50%, -50%)";
+                approveBtn.style.zIndex = "100";
                 approveBtn.style.display = "block";
-            };
-
+           };
             overlay.setMap(map); // Attach to the map to make it positionable
         }
 
@@ -527,6 +538,9 @@
         function initMap() {
             console.log("Initializing map...");
 
+            // Initialize the approve button once
+            initializeApproveButton();
+
             // Fetch project details using the project code
             fetchProjectDetails(projectCode)
                 .then(project => {
@@ -571,13 +585,17 @@
 
                         // Remove previous marker and button
                         if (window.currentMarker) window.currentMarker.setMap(null);
-                        if (window.approveBtn) window.approveBtn.remove();
-                        if (approveBtn) {
-                            approveBtn.remove();
-                            approveBtn = null;
-                        }
 
                         setMarkerAtLocation(place.geometry.location, place.name || "Searched Location");
+
+                        window.currentMarker = new google.maps.Marker({
+                            position: place.geometry.location,
+                            map: map,
+                            title: place.name || "Searched Location"
+                        });
+
+                        map.panTo(place.geometry.location);
+                        map.setZoom(15);
 
                         // Update the map to zoom and center on the place
                         map.panTo(place.geometry.location);
@@ -597,13 +615,9 @@
                             document.getElementById("map").appendChild(approveBtn);
                         }
 
-                        // Position the button after a small delay
-                        setTimeout(() => {
-                            positionApproveButton(place.geometry.location);
-                        }, 100);
-
-                        // Click event for saving location
-                        approveBtn.onclick = approvePoint;
+                        // Show and position the approve button
+                        approveBtn.style.display = 'block';
+                        positionApproveButton(place.geometry.location);
                     });
 
                     // Click event for saving location
