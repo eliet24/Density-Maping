@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <title>Google Maps with Questions</title>
 
     <style>
@@ -20,14 +21,15 @@
             width: 100%; 
             position: relative; 
         }
+
         .approve-marker-btn {
-            background-color: green;
+            background-color: #28a745; /* Professional green color */
             color: white;
             border: none;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            font-size: 16px;
+            width: 32px; /* Increased size for better visibility */
+            height: 32px;
+            font-size: 18px;
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -35,7 +37,20 @@
             cursor: pointer;
             position: absolute;
             transform: translate(-50%, -50%);
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2); /* Adds depth */
+            transition: all 0.2s ease-in-out;
         }
+
+        .approve-marker-btn:hover {
+            background-color: #218838; /* Darker green on hover */
+            transform: translate(-50%, -50%) scale(1.1); /* Slight scaling effect */
+        }
+
+        .approve-marker-btn:active {
+            background-color: #1e7e34; /* Even darker on click */
+            transform: translate(-50%, -50%) scale(0.95); /* Small shrink effect */
+        }
+
         #approve-btn {
             position: absolute;
             bottom: 3px;
@@ -185,7 +200,7 @@
             // Create a small green ✔ button next to the marker
             if (!approveBtn) {
                 approveBtn = document.createElement("button");
-                approveBtn.innerHTML = "✔";
+                approveBtn.innerHTML = '<i class="fas fa-check"></i>';
                 approveBtn.classList.add("approve-marker-btn");
                 document.getElementById("map").appendChild(approveBtn);
             }
