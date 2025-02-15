@@ -154,7 +154,7 @@
             if (marker) marker.setMap(null); // Remove previous marker if any
 
             // Create a new marker at the clicked location
-            marker = new google.maps.marker.AdvancedMarkerElement({
+            marker = new google.maps.marker({
                 map: map,
                 position: location,
                 title: name
@@ -194,7 +194,7 @@
             }
 
             // Place a new marker
-            window.currentMarker = new google.maps.marker.AdvancedMarkerElement({
+            window.currentMarker = new google.maps.marker({
                 position: clickedLocation,
                 map: map,
                 title: "Selected Location"
@@ -535,7 +535,7 @@
                     });
 
                     // Initial marker for project location
-                    window.initialMarker = new google.maps.marker.AdvancedMarkerElement({
+                    window.initialMarker = new google.maps.marker({
                         position: coordinates,
                         map: map,
                         title: "Project Location",
