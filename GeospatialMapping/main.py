@@ -137,7 +137,7 @@ async def save_location(location: Location):
         # Ensure name is always saved
         location_name = location.name.strip()
         if not location_name:
-            location_name = "Unnamed Location"
+            location_name = f"Lat: {location.latitude}, Lng: {location.longitude}"
 
         cursor.execute(
             "INSERT INTO locations (latitude, longitude, name, location_type, project_code) VALUES (?, ?, ?, ?, ?)",

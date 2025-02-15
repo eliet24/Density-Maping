@@ -216,34 +216,35 @@
             // Search for business
             const request = {
                 location: clickedLocation,
-                radius: 50,
+                radius: 100,
                 type: ["store"],
             };
 
             try {
                 service.nearbySearch(request, (results, status) => {
-                    if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                        const place = results[0];
-
-                        service.getDetails(
-                            { placeId: place.place_id, fields: ["name", "formatted_address"] },
-                            (placeDetails, detailsStatus) => {
-                                if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
-                                    selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
-                                    console.log("✅ Business found:", selectedCoordinates.name);
-                                } else {
-                                    console.error("⚠️ Error fetching place details. Falling back to geocoding.");
-                                    fallbackToGeocoder(clickedLocation);
-                                }
-                            }
-                        );
-                    } else {
-                        console.warn("⚠️ No business found. Falling back to geocoder.");
+                    if (status !== google.maps.places.PlacesServiceStatus.OK || results.length === 0) {
+                        console.warn("⚠️ No businesses found. Using Geocoding API instead.");
                         fallbackToGeocoder(clickedLocation);
+                        return;
                     }
+
+                    const place = results[0];
+
+                    service.getDetails(
+                        { placeId: place.place_id, fields: ["name", "formatted_address"] },
+                        (placeDetails, detailsStatus) => {
+                            if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
+                                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
+                                console.log("✅ Business found:", selectedCoordinates.name);
+                            } else {
+                                console.warn("⚠️ Place details not found. Falling back to Geocoding.");
+                                fallbackToGeocoder(clickedLocation);
+                            }
+                        }
+                    );
                 });
             } catch (error) {
-                console.error("❌ Unexpected Google Places API Error:", error);
+                console.error("❌ Google Places API Error:", error);
                 fallbackToGeocoder(clickedLocation);
             }
         }
@@ -251,16 +252,18 @@
         // Fallback method if nearbySearch fails
         function fallbackToGeocoder(location) {
             const geocoder = new google.maps.Geocoder();
+            
             geocoder.geocode({ location }, (results, status) => {
-                if (status === "OK" && results[0]) {
+                if (status === "OK" && results.length > 0) {
                     selectedCoordinates.name = results[0].formatted_address;
                     console.log("✅ Reverse geocoded:", selectedCoordinates.name);
                 } else {
-                    console.error("⚠️ Geocoder failed. Using generic name.");
-                    selectedCoordinates.name = "Unnamed Location";
+                    console.error("❌ Geocoder failed. Using latitude & longitude.");
+                    selectedCoordinates.name = `Lat: ${location.lat().toFixed(6)}, Lng: ${location.lng().toFixed(6)}`;
                 }
             });
         }
+
 
         function createApproveButton() {
             // Create the button only once
