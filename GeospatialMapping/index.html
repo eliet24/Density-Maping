@@ -167,7 +167,6 @@
         // Handle map click - place marker & fetch location details
         function handleMapClick(event) {
             const clickedLocation = event.latLng;
-            const service = new google.maps.places.PlacesService(map);
 
             // Reset selectedCoordinates
             selectedCoordinates = {
@@ -220,33 +219,44 @@
                 type: ["store"],
             };
 
-            try {
-                service.nearbySearch(request, (results, status) => {
-                    if (status !== google.maps.places.PlacesServiceStatus.OK || results.length === 0) {
-                        console.warn("⚠️ No businesses found. Using Geocoding API instead.");
-                        fallbackToGeocoder(clickedLocation);
-                        return;
-                    }
+            // 1️⃣ Try Google Places API first
+            getAddressFromPlaceAPI(selectedCoordinates.latitude, selectedCoordinates.longitude);
+            
+            // 2️⃣ If Google Places API fails, use Geocoding API
+            setTimeout(() => {
+                if (selectedCoordinates.name === "Retrieving address...") {
+                    console.warn("⚠️ Places API took too long. Trying Geocoder...");
+                    fallbackToGeocoder(clickedLocation);
+                }
+            }, 3000); // Wait 3 seconds for Google Places API
 
-                    const place = results[0];
+            // 3️⃣ If Geocoder also fails, try OpenStreetMap
+            setTimeout(() => {
+                if (selectedCoordinates.name === "Retrieving address...") {
+                    console.warn("⚠️ Geocoder took too long. Trying OpenStreetMap...");
+                    fetchAlternativeGeocode(selectedCoordinates.latitude, selectedCoordinates.longitude);
+                }
+            }, 6000); // Wait 6 seconds total
+        }
 
-                    service.getDetails(
-                        { placeId: place.place_id, fields: ["name", "formatted_address"] },
-                        (placeDetails, detailsStatus) => {
-                            if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
-                                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
-                                console.log("✅ Business found:", selectedCoordinates.name);
-                            } else {
-                                console.warn("⚠️ Place details not found. Falling back to Geocoding.");
-                                fallbackToGeocoder(clickedLocation);
-                            }
-                        }
-                    );
-                });
-            } catch (error) {
-                console.error("❌ Google Places API Error:", error);
-                fallbackToGeocoder(clickedLocation);
-            }
+
+        function getAddressFromPlaceAPI(lat, lng) {
+            const service = new google.maps.places.PlacesService(map);
+
+            const request = {
+                query: `${lat}, ${lng}`,
+                fields: ["formatted_address"],
+            };
+
+            service.findPlaceFromQuery(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    selectedCoordinates.name = results[0].formatted_address; // ✅ Store full address
+                    console.log("✅ Found address via Places API:", selectedCoordinates.name);
+                } else {
+                    console.warn("⚠️ Places API failed. Trying Geocoder...");
+                    fallbackToGeocoder({ lat: () => lat, lng: () => lng }); // ✅ Use Google Geocoder
+                }
+            });
         }
 
         // Fallback method if nearbySearch fails
@@ -255,14 +265,34 @@
 
             geocoder.geocode({ location }, (results, status) => {
                 if (status === "OK" && results.length > 0) {
-                    selectedCoordinates.name = results[0].formatted_address; // ✅ Always store full address
+                    selectedCoordinates.name = results[0].formatted_address; // ✅ Store full address
                     console.log("✅ Reverse geocoded:", selectedCoordinates.name);
                 } else {
-                    console.error("❌ Geocoder failed. Using default fallback.");
-                    selectedCoordinates.name = "Unknown Address"; // ✅ Never store latitude/longitude
+                    console.error("❌ Geocoder failed. Trying external API...");
                 }
             });
         }
+
+        function fetchAlternativeGeocode(lat, lng) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.display_name) {
+                        selectedCoordinates.name = data.display_name; // ✅ Use OpenStreetMap address
+                        console.log("✅ OSM Reverse Geocoded:", selectedCoordinates.name);
+                    } else {
+                        console.warn("⚠️ OSM could not find address. Using lat/lng.");
+                        selectedCoordinates.name = `Lat: ${lat}, Lng: ${lng}`;
+                    }
+                })
+                .catch(error => {
+                    console.error("❌ OpenStreetMap API Error:", error);
+                    selectedCoordinates.name = `Lat: ${lat}, Lng: ${lng}`; // ✅ Final fallback
+                });
+        }
+
 
         function createApproveButton() {
             // Create the button only once
