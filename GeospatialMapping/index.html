@@ -219,7 +219,29 @@
             console.log("📍 Clicked Location:", selectedCoordinates.latitude, selectedCoordinates.longitude);
 
             // 1️⃣ Try Google Places API first
-            getAddressFromPlaceAPI(selectedCoordinates.latitude, selectedCoordinates.longitude);
+            const service = new google.maps.places.PlacesService(map);
+            const request = { location: clickedLocation, radius: 100, type: ["store"] };
+
+            service.nearbySearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    const place = results[0];
+                    service.getDetails(
+                        { placeId: place.place_id, fields: ["name", "formatted_address"] },
+                        (placeDetails, detailsStatus) => {
+                            if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
+                                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
+                                console.log("✅ Business found:", selectedCoordinates.name);
+                            } else {
+                                console.warn("⚠️ Place details not found. Trying Geocoder...");
+                                fallbackToGeocoder(clickedLocation);
+                            }
+                        }
+                    );
+                } else {
+                    console.warn("⚠️ No business found. Trying Geocoder...");
+                    fallbackToGeocoder(clickedLocation);
+                }
+            });
             
             // 2️⃣ If Google Places API fails, use Geocoding API
             setTimeout(() => {
@@ -239,29 +261,10 @@
         }
 
 
-        function getAddressFromPlaceAPI(lat, lng) {
-            const service = new google.maps.places.PlacesService(map);
-
-            const request = {
-                query: `${lat}, ${lng}`,
-                fields: ["formatted_address"],
-            };
-
-            service.findPlaceFromQuery(request, (results, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    selectedCoordinates.name = results[0].formatted_address; // ✅ Store full address
-                    console.log("✅ Found address via Places API:", selectedCoordinates.name);
-                } else {
-                    console.warn("⚠️ Places API failed. Trying Geocoder...");
-                    fallbackToGeocoder({ lat: () => lat, lng: () => lng }); // ✅ Use Google Geocoder
-                }
-            });
-        }
-
         // Fallback method if nearbySearch fails
         function fallbackToGeocoder(location) {
-            if (!location || isNaN(location.lat()) || isNaN(location.lng())) {
-                console.error("❌ Invalid location passed to fallbackToGeocoder()");
+            if (!location || typeof location.lat !== "function" || typeof location.lng !== "function") {
+                console.error("❌ Invalid location object passed to fallbackToGeocoder()", location);
                 return;
             }
 
@@ -346,27 +349,34 @@
 
 
         // ✅ Approve & Save selected location
-        function approvePoint() {
+        async function approvePoint() {
             if (!selectedCoordinates.latitude || !selectedCoordinates.longitude) {
                 alert("אנא בחר מיקום על המפה.");
                 return;
             }
 
+            // Check if the address is still being retrieved
+            if (selectedCoordinates.name === "Retrieving address...") {
+                alert("נא להמתין, אנו מאתרים את הכתובת...");
+                return; // Prevent saving until address is retrieved
+            }
+
             const currentQuestion = questions[currentQuestionIndex];
 
-            fetch("/save_location/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    latitude: selectedCoordinates.latitude,
-                    longitude: selectedCoordinates.longitude,
-                    name: selectedCoordinates.name,
-                    location_type: currentQuestion.key,
-                    project_code: projectCode
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
+            try {
+                const response = await fetch("/save_location/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        latitude: selectedCoordinates.latitude,
+                        longitude: selectedCoordinates.longitude,
+                        name: selectedCoordinates.name, // ✅ Ensuring a valid name
+                        location_type: currentQuestion.key,
+                        project_code: projectCode
+                    })
+                });
+
+                const data = await response.json();
                 console.log("📌 Saved:", data);
                 Swal.fire({
                     icon: "success",
@@ -382,11 +392,10 @@
                 selectedCoordinates = { latitude: null, longitude: null, name: null };
                 if (window.currentMarker) window.currentMarker.setMap(null);
                 document.getElementById("pac-input").value = "";
-            })
-            .catch(error => {
-                console.error("❌ Error saving data:", error);
-                alert("There was an error saving the location.");
-            });
+
+            } catch (error) {
+            console.error("❌ Error saving data:", error);
+            alert("There was an error saving the location.");
         }
 
         function updateQuestion() {
