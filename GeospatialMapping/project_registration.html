@@ -281,7 +281,7 @@
                
                     // Store the first marker globally
                     if (!window.initialMarker) {
-                        window.initialMarker = new google.maps.marker({
+                        window.initialMarker = new google.maps.Marker({
                             position: coordinates,
                             map: map,
                             title: projectAddress
@@ -422,7 +422,7 @@
                         zoom: 14 // Adjust zoom level
                     });
 
-                    new google.maps.marker({
+                    new google.maps.Marker({
                         position: coordinates,
                         map: map,
                         title: projectAddress
@@ -525,7 +525,7 @@
                     if (response.ok && data.locations) {
                         // Add new markers
                         data.locations.forEach(location => {
-                            const marker = new google.maps.marker({
+                            const marker = new google.maps.Marker({
                                 position: { lat: location.latitude, lng: location.longitude },
                                 map: map,
                                 title: location.name
