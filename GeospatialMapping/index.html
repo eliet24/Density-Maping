@@ -217,45 +217,47 @@
             const request = {
                 location: clickedLocation,
                 radius: 10,
-                type: ["establishment"]
+                type: ["store"],
             };
 
-            service.nearbySearch(request, (results, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    const place = results[0];
+            try{
+                service.nearbySearch(request, (results, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                        const place = results[0];
 
-                    service.getDetails(
-                        { placeId: place.place_id, fields: ["name", "formatted_address", "geometry"] },
-                        (placeDetails, status) => {
-                            if (status === google.maps.places.PlacesServiceStatus.OK) {
-                                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
-                                console.log("✅ Business found:", selectedCoordinates.name);
-                                window.currentMarker.setTitle(selectedCoordinates.name);
-                            } else {
-                                console.error("Error fetching place details:", status);
-                                fallbackToGeocoder(clickedLocation);
+                        service.getDetails(
+                            { placeId: place.place_id, fields: ["name", "formatted_address", "geometry"] },
+                            (placeDetails, detailsStatus) => {
+                                if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
+                                    selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
+                                    console.log("✅ Business found:", selectedCoordinates.name);
+                                } else {
+                                    console.error("Error fetching place details:", detailsStatus);
+                                }
                             }
-                        }
-                    );
-                } else {
-                    console.error("Nearby search failed:", status);
-                    fallbackToGeocoder(clickedLocation);
-                }
-            });
-
-            // Fallback method if nearbySearch fails
-            function fallbackToGeocoder(location) {
-                const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ location }, (results, status) => {
-                    if (status === "OK" && results[0]) {
-                        selectedCoordinates.name = results[0].formatted_address;
-                        console.log("✅ Reverse geocoded:", selectedCoordinates.name);
-                        window.currentMarker.setTitle(selectedCoordinates.name);
+                        );
                     } else {
-                        console.error("Geocoder failed:", status);
+                        console.warn("No nearby places found. Falling back to geocoding.");
+                        fallbackToGeocoder(clickedLocation);
                     }
                 });
+            } catch (error) {
+                console.error("❌ Unexpected error in Places API:", error);
             }
+        }
+
+        // Fallback method if nearbySearch fails
+        function fallbackToGeocoder(location) {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location }, (results, status) => {
+                if (status === "OK" && results[0]) {
+                    selectedCoordinates.name = results[0].formatted_address;
+                    console.log("✅ Reverse geocoded:", selectedCoordinates.name);
+                    window.currentMarker.setTitle(selectedCoordinates.name);
+                } else {
+                    console.error("Geocoder failed:", status);
+                }
+            });
         }
 
         function createApproveButton() {
