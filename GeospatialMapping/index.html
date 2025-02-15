@@ -154,7 +154,7 @@
             if (marker) marker.setMap(null); // Remove previous marker if any
 
             // Create a new marker at the clicked location
-            marker = new google.maps.Marker({
+            marker = new google.maps.marker.AdvancedMarkerElement({
                 map: map,
                 position: location,
                 title: name
@@ -167,12 +167,16 @@
         // Handle map click - place marker & fetch location details
         function handleMapClick(event) {
             const clickedLocation = event.latLng;
+            if (!clickedLocation || isNaN(clickedLocation.lat()) || isNaN(clickedLocation.lng())) {
+                console.error("❌ Invalid location detected in handleMapClick()");
+                return;
+            }
 
             // Reset selectedCoordinates
             selectedCoordinates = {
                 latitude: clickedLocation.lat(),
                 longitude: clickedLocation.lng(),
-                name: ""
+                name: "Retrieving address..."
             };
 
             // Remove previous marker
@@ -190,7 +194,7 @@
             }
 
             // Place a new marker
-            window.currentMarker = new google.maps.Marker({
+            window.currentMarker = new google.maps.marker.AdvancedMarkerElement({
                 position: clickedLocation,
                 map: map,
                 title: "Selected Location"
@@ -212,12 +216,7 @@
             // Click event for saving location
             approveBtn.onclick = approvePoint;
 
-            // Search for business
-            const request = {
-                location: clickedLocation,
-                radius: 100,
-                type: ["store"],
-            };
+            console.log("📍 Clicked Location:", selectedCoordinates.latitude, selectedCoordinates.longitude);
 
             // 1️⃣ Try Google Places API first
             getAddressFromPlaceAPI(selectedCoordinates.latitude, selectedCoordinates.longitude);
@@ -261,17 +260,24 @@
 
         // Fallback method if nearbySearch fails
         function fallbackToGeocoder(location) {
+            if (!location || isNaN(location.lat()) || isNaN(location.lng())) {
+                console.error("❌ Invalid location passed to fallbackToGeocoder()");
+                return;
+            }
+
             const geocoder = new google.maps.Geocoder();
 
             geocoder.geocode({ location }, (results, status) => {
                 if (status === "OK" && results.length > 0) {
-                    selectedCoordinates.name = results[0].formatted_address; // ✅ Store full address
+                    selectedCoordinates.name = results[0].formatted_address;
                     console.log("✅ Reverse geocoded:", selectedCoordinates.name);
                 } else {
-                    console.error("❌ Geocoder failed. Trying external API...");
+                    console.error("❌ Geocoder failed. Trying OpenStreetMap...");
+                    fetchAlternativeGeocode(location.lat(), location.lng());
                 }
             });
         }
+
 
         function fetchAlternativeGeocode(lat, lng) {
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
@@ -529,12 +535,12 @@
                     });
 
                     // Initial marker for project location
-                    window.initialMarker = new google.maps.Marker({
+                    window.initialMarker = new google.maps.marker.AdvancedMarkerElement({
                         position: coordinates,
                         map: map,
                         title: "Project Location",
                         icon: {
-                            url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                            url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
                         }
                     });
 
