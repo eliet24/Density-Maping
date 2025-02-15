@@ -133,9 +133,15 @@ async def save_location(location: Location):
     try:
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
+
+        # Ensure name is always saved
+        location_name = location.name.strip()
+        if not location_name:
+            location_name = "Unnamed Location"
+
         cursor.execute(
             "INSERT INTO locations (latitude, longitude, name, location_type, project_code) VALUES (?, ?, ?, ?, ?)",
-            (location.latitude, location.longitude, location.name, location.location_type, location.project_code)
+            (location.latitude, location.longitude, location_name, location.location_type, location.project_code)
         )
         conn.commit()
         conn.close()

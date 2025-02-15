@@ -169,6 +169,13 @@
             const clickedLocation = event.latLng;
             const service = new google.maps.places.PlacesService(map);
 
+            // Reset selectedCoordinates
+            selectedCoordinates = {
+                latitude: clickedLocation.lat(),
+                longitude: clickedLocation.lng(),
+                name: ""
+            };
+
             // Remove previous marker
             if (window.currentMarker) {
                 window.currentMarker.setMap(null);
@@ -190,13 +197,6 @@
                 title: "Selected Location"
             });
 
-            // Reset selectedCoordinates
-            selectedCoordinates = {
-                latitude: clickedLocation.lat(),
-                longitude: clickedLocation.lng(),
-                name: ""
-            };
-
             // Create a small green ✔ button next to the marker
             if (!approveBtn) {
                 approveBtn = document.createElement("button");
@@ -208,7 +208,7 @@
             // Position the button correctly
             setTimeout(() => {
                 positionApproveButton(clickedLocation);
-            }, 300); // Small delay to ensure map updates
+            }, 100); // Small delay to ensure map updates
 
             // Click event for saving location
             approveBtn.onclick = approvePoint;
@@ -216,33 +216,35 @@
             // Search for business
             const request = {
                 location: clickedLocation,
-                radius: 10,
+                radius: 50,
                 type: ["store"],
             };
 
-            try{
+            try {
                 service.nearbySearch(request, (results, status) => {
                     if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
                         const place = results[0];
 
                         service.getDetails(
-                            { placeId: place.place_id, fields: ["name", "formatted_address", "geometry"] },
+                            { placeId: place.place_id, fields: ["name", "formatted_address"] },
                             (placeDetails, detailsStatus) => {
                                 if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
                                     selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
                                     console.log("✅ Business found:", selectedCoordinates.name);
                                 } else {
-                                    console.error("Error fetching place details:", detailsStatus);
+                                    console.error("⚠️ Error fetching place details. Falling back to geocoding.");
+                                    fallbackToGeocoder(clickedLocation);
                                 }
                             }
                         );
                     } else {
-                        console.warn("No nearby places found. Falling back to geocoding.");
+                        console.warn("⚠️ No business found. Falling back to geocoder.");
                         fallbackToGeocoder(clickedLocation);
                     }
                 });
             } catch (error) {
-                console.error("❌ Unexpected error in Places API:", error);
+                console.error("❌ Unexpected Google Places API Error:", error);
+                fallbackToGeocoder(clickedLocation);
             }
         }
 
@@ -253,9 +255,9 @@
                 if (status === "OK" && results[0]) {
                     selectedCoordinates.name = results[0].formatted_address;
                     console.log("✅ Reverse geocoded:", selectedCoordinates.name);
-                    window.currentMarker.setTitle(selectedCoordinates.name);
                 } else {
-                    console.error("Geocoder failed:", status);
+                    console.error("⚠️ Geocoder failed. Using generic name.");
+                    selectedCoordinates.name = "Unnamed Location";
                 }
             });
         }
@@ -312,12 +314,6 @@
                 return;
             }
 
-            // Ensure name is always set to something meaningful
-            /*
-            if (!selectedCoordinates.name || selectedCoordinates.name === "Unknown Location") {
-                selectedCoordinates.name = "Unnamed Location";
-            }
-            */
             const currentQuestion = questions[currentQuestionIndex];
 
             fetch("/save_location/", {
@@ -542,7 +538,8 @@
                         // Store selected coordinates and name
                         selectedCoordinates.latitude = place.geometry.location.lat();
                         selectedCoordinates.longitude = place.geometry.location.lng();
-                        selectedCoordinates.name = place.name || "Unnamed Location";
+                        selectedCoordinates.name = place.name ? `${place.name}, ${place.formatted_address}` : place.formatted_address;
+                        console.log("📍 Selected Location:", selectedCoordinates.name);
 
                         // Create the approve button
                         if (!approveBtn) {
@@ -555,7 +552,7 @@
                         // Position the button after a small delay
                         setTimeout(() => {
                             positionApproveButton(place.geometry.location);
-                        }, 300);
+                        }, 100);
 
                         // Click event for saving location
                         approveBtn.onclick = approvePoint;
