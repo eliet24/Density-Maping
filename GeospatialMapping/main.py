@@ -134,10 +134,10 @@ async def save_location(location: Location):
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
 
-        # Ensure name is always saved
+        # Ensure name is always saved as an address, not lat/lng
         location_name = location.name.strip()
-        if not location_name:
-            location_name = f"Lat: {location.latitude}, Lng: {location.longitude}"
+        if not location_name or location_name.lower() in ["unnamed location", "unknown address"]:
+            location_name = "Unknown Address"
 
         cursor.execute(
             "INSERT INTO locations (latitude, longitude, name, location_type, project_code) VALUES (?, ?, ?, ?, ?)",
@@ -148,6 +148,7 @@ async def save_location(location: Location):
         return {"message": "Location saved successfully"}
     except Exception as e:
         return {"detail": f"An error occurred: {str(e)}"}
+
 
 @app.post("/save_project/")
 async def save_project(project: Project):

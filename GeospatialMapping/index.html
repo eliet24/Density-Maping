@@ -252,18 +252,17 @@
         // Fallback method if nearbySearch fails
         function fallbackToGeocoder(location) {
             const geocoder = new google.maps.Geocoder();
-            
+
             geocoder.geocode({ location }, (results, status) => {
                 if (status === "OK" && results.length > 0) {
-                    selectedCoordinates.name = results[0].formatted_address;
+                    selectedCoordinates.name = results[0].formatted_address; // ✅ Always store full address
                     console.log("✅ Reverse geocoded:", selectedCoordinates.name);
                 } else {
-                    console.error("❌ Geocoder failed. Using latitude & longitude.");
-                    selectedCoordinates.name = `Lat: ${location.lat().toFixed(6)}, Lng: ${location.lng().toFixed(6)}`;
+                    console.error("❌ Geocoder failed. Using default fallback.");
+                    selectedCoordinates.name = "Unknown Address"; // ✅ Never store latitude/longitude
                 }
             });
         }
-
 
         function createApproveButton() {
             // Create the button only once
