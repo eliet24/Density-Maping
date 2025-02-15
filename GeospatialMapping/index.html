@@ -274,28 +274,24 @@
             
 
         // Fallback method if nearbySearch fails
-        async function fallbackToGeocoder(location) {
-            if (!location || isNaN(location.lat()) || isNaN(location.lng())) {
+        function fallbackToGeocoder(location) {
+            if (!location || typeof location.lat !== "function" || typeof location.lng !== "function") {
                 console.error("❌ Invalid location object passed to fallbackToGeocoder()", location);
                 return;
             }
 
             const geocoder = new google.maps.Geocoder();
 
-            await new Promise((resolve) => {
-                geocoder.geocode({ location }, (results, status) => {
-                    if (status === "OK" && results.length > 0) {
-                        selectedCoordinates.name = results[0].formatted_address;
-                        console.log("✅ Reverse geocoded:", selectedCoordinates.name);
-                    } else {
-                        console.error("❌ Geocoder failed. Using OpenStreetMap...");
-                        fetchAlternativeGeocode(location.lat(), location.lng());
-                    }
-                    resolve();
-                });
+            geocoder.geocode({ location }, (results, status) => {
+                if (status === "OK" && results.length > 0) {
+                    selectedCoordinates.name = results[0].formatted_address;
+                    console.log("✅ Reverse geocoded:", selectedCoordinates.name);
+                } else {
+                    console.error("❌ Geocoder failed. Trying OpenStreetMap...");
+                    fetchAlternativeGeocode(location.lat(), location.lng());
+                }
             });
         }
-
 
 
         function fetchAlternativeGeocode(lat, lng) {
@@ -365,7 +361,7 @@
 
 
         // ✅ Approve & Save selected location
-        async function approvePoint() {
+        function approvePoint() {
             if (!selectedCoordinates.latitude || !selectedCoordinates.longitude) {
                 alert("אנא בחר מיקום על המפה.");
                 return;
