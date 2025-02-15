@@ -134,13 +134,12 @@
                 approveBtn = document.createElement("button");
                 approveBtn.innerHTML = '<i class="fas fa-check"></i>';
                 approveBtn.classList.add("approve-marker-btn");
-                approveBtn.style.visibility = 'hidden'; // Use visibility instead of display
+                approveBtn.style.display = 'none'; // Start with display none
                 document.getElementById("map").appendChild(approveBtn);
                 approveBtn.onclick = approvePoint;
             }
             return approveBtn;
         }
-
         // Fetch project details and initialize the map
         async function fetchProjectCode() {
             try {
@@ -234,7 +233,7 @@
             if (!approveBtn) {
                 approveBtn = initializeApproveButton();
             }
-            approveBtn.style.visibility = 'visible';
+            approveBtn.style.display = 'flex';
             // Position the button
             positionApproveButton(clickedLocation);
 
@@ -341,20 +340,20 @@
         function positionApproveButton(location) {
             if (!approveBtn || !map) return;
 
-            const projection = new google.maps.OverlayView();
+            const overlayView = new google.maps.OverlayView();
             projection.setMap(map);
 
-            projection.draw = function() {
+            overlayView.draw = function() {
                 if (!this.getProjection()) return;
 
                 const point = this.getProjection().fromLatLngToDivPixel(location);
                 if (point) {
                     approveBtn.style.position = 'absolute';
                     approveBtn.style.left = `${point.x}px`;
-                    approveBtn.style.top = `${point.y}px`;
+                    approveBtn.style.top = `${point.y - 20}px`; // Offset slightly above the marker
                     approveBtn.style.transform = 'translate(-50%, -50%)';
                     approveBtn.style.zIndex = '1000';
-                    approveBtn.style.visibility = 'visible';
+                    approveBtn.style.display = 'flex';
                 }
             };
         }
@@ -490,12 +489,6 @@
                             title: place.name || "Searched Location"
                         });
 
-                        window.currentMarker = new google.maps.Marker({
-                            position: place.geometry.location,
-                            map: map,
-                            title: place.name || "Searched Location"
-                        });
-
                         map.panTo(place.geometry.location);
                         map.setZoom(15);
 
@@ -504,9 +497,14 @@
                         selectedCoordinates.longitude = place.geometry.location.lng();
                         selectedCoordinates.name = place.name ? `${place.name}, ${place.formatted_address}` : place.formatted_address;
                         console.log("📍 Selected Location:", selectedCoordinates.name);
+                        
+                        // Show and position the approve button
+                        if (!approveBtn) {
+                            approveBtn = initializeApproveButton();
+                        }
 
                         // Show and position the approve button
-                        approveBtn.style.visibility = 'visible';
+                        approveBtn.style.display = 'flex';
                         positionApproveButton(place.geometry.location);
                     });
 
