@@ -165,7 +165,7 @@
         }
 
         // Handle map click - place marker & fetch location details
-        async function handleMapClick(event) {
+        function handleMapClick(event) {
             const clickedLocation = event.latLng;
             if (!clickedLocation || isNaN(clickedLocation.lat()) || isNaN(clickedLocation.lng())) {
                 console.error("❌ Invalid location detected in handleMapClick()");
@@ -222,40 +222,45 @@
             const service = new google.maps.places.PlacesService(map);
             const request = { location: clickedLocation, radius: 100, type: ["store"] };
 
-            try {
-                const placesResult = await new Promise((resolve, reject) => {
-                    service.nearbySearch(request, (results, status) => {
-                        if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                            resolve(results[0]); // Return the first business found
-                        } else {
-                            reject(new Error("⚠️ No businesses found nearby."));
-                        }
-                    });
-                });
-
-                // Fetch business details
-                const placeDetails = await new Promise((resolve, reject) => {
+            service.nearbySearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    const place = results[0];
                     service.getDetails(
-                        { placeId: placesResult.place_id, fields: ["name", "formatted_address"] },
-                        (details, status) => {
-                            if (status === google.maps.places.PlacesServiceStatus.OK) {
-                                resolve(details);
+                        { placeId: place.place_id, fields: ["name", "formatted_address"] },
+                        (placeDetails, detailsStatus) => {
+                            if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
+                                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
+                                console.log("✅ Business found:", selectedCoordinates.name);
                             } else {
-                                reject(new Error("⚠️ Failed to get place details."));
+                                console.warn("⚠️ Place details not found. Trying Geocoder...");
+                                fallbackToGeocoder(clickedLocation);
                             }
                         }
                     );
-                });
+                } else {
+                    console.warn("⚠️ No business found. Trying Geocoder...");
+                    fallbackToGeocoder(clickedLocation);
+                }
+            });
+ /*           
+            // 2️⃣ If Google Places API fails, use Geocoding API
+            setTimeout(() => {
+                if (selectedCoordinates.name === "Retrieving address...") {
+                    console.warn("⚠️ Places API took too long. Trying Geocoder...");
+                    fallbackToGeocoder(clickedLocation);
+                }
+            }, 3000); // Wait 3 seconds for Google Places API
 
-                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
-                console.log("✅ Business found:", selectedCoordinates.name);
-            } catch (error) {
-                console.warn(error.message); // Log the specific error message
-                console.warn("⚠️ Places API failed. Falling back to Geocoder...");
-                await fallbackToGeocoder(clickedLocation);
-            }
+            // 3️⃣ If Geocoder also fails, try OpenStreetMap
+            setTimeout(() => {
+                if (selectedCoordinates.name === "Retrieving address...") {
+                    console.warn("⚠️ Geocoder took too long. Trying OpenStreetMap...");
+                    fetchAlternativeGeocode(selectedCoordinates.latitude, selectedCoordinates.longitude);
+                }
+            }, 3000); // Wait 3 seconds total
         }
-
+*/
+        }
 
         // Fallback method if nearbySearch fails
         function fallbackToGeocoder(location) {
