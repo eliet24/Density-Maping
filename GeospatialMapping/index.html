@@ -187,11 +187,15 @@
             if (window.approveBtn) {
                 window.approveBtn.remove();
             }
-
+            /*
             if (approveBtn) {
                 approveBtn.remove();
                 approveBtn = null;
             }
+            */
+
+            // Create the approve button if not already created
+            createApproveButton();
 
             // Place a new marker
             window.currentMarker = new google.maps.Marker({
@@ -199,7 +203,7 @@
                 map: map,
                 title: "Selected Location"
             });
-
+/*
             // Create a small green ✔ button next to the marker
             if (!approveBtn) {
                 approveBtn = document.createElement("button");
@@ -207,7 +211,7 @@
                 approveBtn.classList.add("approve-marker-btn");
                 document.getElementById("map").appendChild(approveBtn);
             }
-
+*/
             // Position the button correctly
             setTimeout(() => {
                 positionApproveButton(clickedLocation);
@@ -223,6 +227,32 @@
             const request = { location: clickedLocation, radius: 100, type: ["store"] };
 
             service.nearbySearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    const place = results[0];
+                    service.getDetails(
+                        { placeId: place.place_id, fields: ["name", "formatted_address"] },
+                        (placeDetails, detailsStatus) => {
+                            if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
+                                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
+                                addressRetrieved = true;
+                            }
+                        }
+                    );
+                }
+            });
+
+            // Run Google Geocoder and OpenStreetMap in parallel
+            Promise.all([
+                new Promise(resolve => fallbackToGeocoder(clickedLocation, resolve)),
+                new Promise(resolve => fetchAlternativeGeocode(clickedLocation.lat(), clickedLocation.lng(), resolve))
+            ]).then(([googleResult, osmResult]) => {
+                if (!addressRetrieved) {
+                    selectedCoordinates.name = googleResult || osmResult || `Lat: ${clickedLocation.lat()}, Lng: ${clickedLocation.lng()}`;
+                }
+            });
+        }
+
+         /*   service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
                     const place = results[0];
                     service.getDetails(
@@ -259,47 +289,25 @@
                 }
             }, 6000); // Wait 6 seconds total
         }
-
+*/
 
         // Fallback method if nearbySearch fails
-        function fallbackToGeocoder(location) {
-            if (!location || typeof location.lat !== "function" || typeof location.lng !== "function") {
-                console.error("❌ Invalid location object passed to fallbackToGeocoder()", location);
-                return;
-            }
-
+        function fallbackToGeocoder(location, callback) {
             const geocoder = new google.maps.Geocoder();
-
             geocoder.geocode({ location }, (results, status) => {
                 if (status === "OK" && results.length > 0) {
-                    selectedCoordinates.name = results[0].formatted_address;
-                    console.log("✅ Reverse geocoded:", selectedCoordinates.name);
+                    callback(results[0].formatted_address);
                 } else {
-                    console.error("❌ Geocoder failed. Trying OpenStreetMap...");
-                    fetchAlternativeGeocode(location.lat(), location.lng());
+                    callback(null);
                 }
             });
         }
 
-
-        function fetchAlternativeGeocode(lat, lng) {
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
-
-            fetch(url)
+        function fetchAlternativeGeocode(lat, lng, callback) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
                 .then(response => response.json())
-                .then(data => {
-                    if (data && data.display_name) {
-                        selectedCoordinates.name = data.display_name; // ✅ Use OpenStreetMap address
-                        console.log("✅ OSM Reverse Geocoded:", selectedCoordinates.name);
-                    } else {
-                        console.warn("⚠️ OSM could not find address. Using lat/lng.");
-                        selectedCoordinates.name = `Lat: ${lat}, Lng: ${lng}`;
-                    }
-                })
-                .catch(error => {
-                    console.error("❌ OpenStreetMap API Error:", error);
-                    selectedCoordinates.name = `Lat: ${lat}, Lng: ${lng}`; // ✅ Final fallback
-                });
+                .then(data => callback(data.display_name || null))
+                .catch(() => callback(null));
         }
 
 
@@ -307,10 +315,9 @@
             // Create the button only once
             if (!approveBtn) {
                 approveBtn = document.createElement("button");
-                approveBtn.innerHTML = "✔"; // Green V button
+                approveBtn.innerHTML = '<i class="fas fa-check"></i>'; // Green V button
                 approveBtn.classList.add("approve-marker-btn");
-
-                // Append it directly to the map container
+                approveBtn.onclick = approvePoint;
                 document.getElementById("map").appendChild(approveBtn);
             }
         }
