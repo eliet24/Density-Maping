@@ -167,6 +167,7 @@
         // Handle map click - place marker & fetch location details
         function handleMapClick(event) {
             const clickedLocation = event.latLng;
+            let addressRetrieved = false; // ✅ Declare the variable properly
             if (!clickedLocation || isNaN(clickedLocation.lat()) || isNaN(clickedLocation.lng())) {
                 console.error("❌ Invalid location detected in handleMapClick()");
                 return;
@@ -235,9 +236,13 @@
                             if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
                                 selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
                                 addressRetrieved = true;
+                            } else {
+                                console.warn("⚠️ Google Places details lookup failed:", detailsStatus);
                             }
                         }
                     );
+                } else {
+                    console.warn("⚠️ Google Places nearby search failed:", status);
                 }
             });
 
@@ -251,7 +256,6 @@
                 }
             });
         }
-
          /*   service.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
                     const place = results[0];
