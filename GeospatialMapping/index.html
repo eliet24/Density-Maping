@@ -78,8 +78,8 @@
         */
         #search-box {
             position: absolute;
-            top: 50px;
-            right: 0px;
+            top: 80px;
+            right: 10px;
             z-index: 10;
             background-color: white;
             padding: 10px;
@@ -93,15 +93,19 @@
         #search-box input {
             border: none;
             outline: none;
-            padding: 2px 10px;
-            font-size: 17px;
-            width: 180px;
+            padding: 4px 12px;
+            font-size: 20px;
+            width: 200px;
             font-family: Arial, sans-serif;
             border-radius: 20px;
         }
         #search-box input::placeholder {
             color: #aaa;
             font-style: italic;
+        }
+        #search-box input:focus {
+            border: 2px solid #007bff; /* Highlight border on focus */
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Blue glow */
         }
     </style>
 </head>
