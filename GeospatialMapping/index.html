@@ -10,25 +10,21 @@
         body { margin: 0; font-family: Arial, sans-serif; }
 
         #question-container {
-            position: fixed;
-            top: 10px; /* Adjust position */
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 15px;
-            font-size: 28px;
+            text-align: center;
+            font-size: 28px; /* Increase font size */
             font-weight: bold;
-            background-color: #ffeb3b;
-            color: #d32f2f;
-            border-radius: 10px;
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
-            animation: float 1.5s infinite alternate;
+            padding: 15px;
+            background-color: #06b2dd; 
+            color: #042d46; 
+            border: 3px solid #062f64; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+            animation: pulse 1.5s infinite alternate; /* Apply animation */
         }
 
-        @keyframes float {
-            0% { transform: translate(-50%, 0px); }
-            100% { transform: translate(-50%, 5px); } /* Slight up/down movement */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            10% { transform: scale(1.05); } /* Slight zoom-in effect */
         }
-
         
         #map { 
             height: 85vh; 
