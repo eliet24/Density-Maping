@@ -107,7 +107,7 @@
     <div id="map"></div>
 
     <!-- Approve Button -->
-    <button id="approve-btn"> הוספת המיקום</button>
+    <!-- <button id="approve-btn"> הוספת המיקום</button> -->
 
     <div class="error-message" id="error-message" style="display: none;"></div>
 
@@ -188,12 +188,6 @@
             if (window.approveBtn) {
                 window.approveBtn.remove();
             }
-            /*
-            if (approveBtn) {
-                approveBtn.remove();
-                approveBtn = null;
-            }
-            */
 
             // Create the approve button if not already created
             createApproveButton();
@@ -204,15 +198,7 @@
                 map: map,
                 title: "Selected Location"
             });
-/*
-            // Create a small green ✔ button next to the marker
-            if (!approveBtn) {
-                approveBtn = document.createElement("button");
-                approveBtn.innerHTML = '<i class="fas fa-check"></i>';
-                approveBtn.classList.add("approve-marker-btn");
-                document.getElementById("map").appendChild(approveBtn);
-            }
-*/
+
             // Position the button correctly
             setTimeout(() => {
                 positionApproveButton(clickedLocation);
@@ -256,44 +242,6 @@
                 }
             });
         }
-         /*   service.nearbySearch(request, (results, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    const place = results[0];
-                    service.getDetails(
-                        { placeId: place.place_id, fields: ["name", "formatted_address"] },
-                        (placeDetails, detailsStatus) => {
-                            if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
-                                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
-                                console.log("✅ Business found:", selectedCoordinates.name);
-                            } else {
-                                console.warn("⚠️ Place details not found. Trying Geocoder...");
-                                fallbackToGeocoder(clickedLocation);
-                            }
-                        }
-                    );
-                } else {
-                    console.warn("⚠️ No business found. Trying Geocoder...");
-                    fallbackToGeocoder(clickedLocation);
-                }
-            });
-            
-            // 2️⃣ If Google Places API fails, use Geocoding API
-            setTimeout(() => {
-                if (selectedCoordinates.name === "Retrieving address...") {
-                    console.warn("⚠️ Places API took too long. Trying Geocoder...");
-                    fallbackToGeocoder(clickedLocation);
-                }
-            }, 3000); // Wait 3 seconds for Google Places API
-
-            // 3️⃣ If Geocoder also fails, try OpenStreetMap
-            setTimeout(() => {
-                if (selectedCoordinates.name === "Retrieving address...") {
-                    console.warn("⚠️ Geocoder took too long. Trying OpenStreetMap...");
-                    fetchAlternativeGeocode(selectedCoordinates.latitude, selectedCoordinates.longitude);
-                }
-            }, 6000); // Wait 6 seconds total
-        }
-*/
 
         // Fallback method if nearbySearch fails
         function fallbackToGeocoder(location, callback) {
@@ -415,7 +363,7 @@
                 document.getElementById("question-container").innerText = questions[currentQuestionIndex].text;
             } else {
                 document.getElementById("question-container").innerText = "Thank You";
-                document.getElementById("approve-btn").style.display = "none";
+                //document.getElementById("approve-btn").style.display = "none";
                 setTimeout(() => {
                     try {
                         window.close(); // Try closing normally
@@ -430,111 +378,7 @@
             }
         }
 
-        // Initialize Google Map
-        /*
-        async function initMap() {
-            console.log("Initializing map...");
 
-            // Fetch project details using the project code
-            const project = await fetchProjectDetails(projectCode);
-            if (!project || !project.address) return;
-
-            // Geocode the project address
-            const coordinates = await geocodeAddress(project.address);
-            if (!coordinates) return;
-
-            // Initialize the map
-            
-            map = new google.maps.Map(document.getElementById("map"), {
-                //center: { lat: 31.7683, lng: 35.2137 }, // Default center
-                center: coordinates,
-                zoom: 14
-            });
-            
-            window.initialMarker = new google.maps.Marker({
-                position: coordinates,
-                map: map,  // ✅ Use `map` instead of `window.map`
-                title: "Project Location",
-                icon: {
-                    url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                }
-            });
-
-            // Add click event listener to the map.
-            map.addListener("click", handleMapClick);
-
-            // Attach the search box
-            const input = document.getElementById("pac-input");
-            searchBox = new google.maps.places.SearchBox(input);
-
-            updateQuestion();
-
-            // Bias the SearchBox results towards the current map view
-            /*
-            map.addListener("bounds_changed", () => {
-                searchBox.setBounds(map.getBounds());
-            });
-            */
-           /*
-            // Listen for search results
-            searchBox.addListener("places_changed", () => {
-                const places = searchBox.getPlaces();
-                if (places.length === 0) return;
-                const place = places[0];
-
-                // Remove previous marker and button
-                if (window.currentMarker) {
-                    window.currentMarker.setMap(null);
-                }
-
-                // Remove previous Approve button
-                if (window.approveBtn) {
-                    window.approveBtn.remove();
-                }
-                if (approveBtn) {
-                    approveBtn.remove();
-                    approveBtn = null;
-                }
-                setMarkerAtLocation(place.geometry.location, place.name || "Searched Location");
-
-                // Update the map to zoom and center on the place
-                map.panTo(place.geometry.location);
-                map.setZoom(15);
-
-                // Store selected coordinates and name
-                selectedCoordinates.latitude = place.geometry.location.lat();
-                selectedCoordinates.longitude = place.geometry.location.lng();
-                selectedCoordinates.name = place.name || "Unnamed Location";
-                   
-                // Create the small green ✔ button
-                if (!approveBtn) {
-                    approveBtn = document.createElement("button");
-                    approveBtn.innerHTML = "✔";
-                    approveBtn.classList.add("approve-marker-btn");
-                    document.getElementById("map").appendChild(approveBtn);
-                }
-                
-                // Position the button after a small delay to ensure the map has updated
-                setTimeout(() => {
-                    positionApproveButton(place.geometry.location);
-                }, 300); // Delay ensures Google Maps has updated before positioning
-
-                // Click event for saving location
-                approveBtn.onclick = approvePoint;
-            });
-
-            // Click event for saving location
-            approveBtn.onclick = approvePoint;
-
-            // Center map on the searched location
-            map.panTo(place.geometry.location);
-            map.setZoom(15);
-
-            // Add event listener for approve button
-            document.getElementById("approve-btn").addEventListener("click", approvePoint);
-         
-        }
-        */
         function initMap() {
             console.log("Initializing map...");
 
@@ -618,7 +462,7 @@
                     });
 
                     // Click event for saving location
-                    document.getElementById("approve-btn").addEventListener("click", approvePoint);
+                    //document.getElementById("approve-btn").addEventListener("click", approvePoint);
                 })
                 .catch(error => {
                     console.error("Error initializing map:", error);
