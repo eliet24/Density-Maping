@@ -1,71 +1,83 @@
 import torch
 from PIL import Image
-import cv2
+from transformers import BlipProcessor, BlipForConditionalGeneration
 from ultralytics import YOLO
-from transformers import DetrImageProcessor, DetrForObjectDetection, CLIPProcessor, CLIPModel
-from torchvision import transforms  # Add this import
-import numpy as np
+from transformers import CLIPProcessor, CLIPModel
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import VisionEncoderDecoderModel, ViTImageProcessor
 
-# Load Models
-yolo_model = YOLO("yolov8s.pt")  # YOLOv8 model (small version)
-detr_model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50")
-detr_processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
+# Load YOLOv8 Model
+yolo_model = YOLO("yolov8s.pt")  # YOLOv8 (small version)
+
+# Load BLIP-Image-Captioning Model
+blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+
+# Load CLIP Model
 clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
+# Load ViT-GPT2 Image Captioning Model
+vit_gpt2_model = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+vit_gpt2_processor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+vit_gpt2_tokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
 
-def preprocess_for_yolo(image_path):
-    """Pre-processing for YOLO"""
-    # Read and resize the image
-    image = cv2.imread(image_path)
-    image = cv2.resize(image, (416, 416))  # Resize to YOLO's expected input size
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB
-    image = image / 255.0  # Normalize to [0, 1]
-    return image
-
-
-def preprocess_for_detr(image_path):
-    """Pre-processing for DETR"""
-    image = Image.open(image_path).convert("RGB")
-
-    # Resize and normalize
-    transform = transforms.Compose([
-        transforms.Resize((800, 800)),
-        transforms.ToTensor(),  # Convert the image to tensor
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalization
-    ])
-
-    # Apply the transform and ensure the image is properly normalized
-    image = transform(image)
-
-    # Ensure the values are between [0, 1] after normalization
-    image = torch.clamp(image, min=0.0, max=1.0)
-
-    return image
+# Load NLP Model (FLAN-T5)
+tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-large")
+nlp_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-large")
 
 
-def preprocess_for_clip(image_path, texts):
-    """Pre-processing for CLIP"""
-    image = Image.open(image_path).convert("RGB")
+# Load Business Categories from File
+def load_business_categories(file_path):
+    """Load business categories from a text file."""
+    with open(file_path, "r", encoding="utf-8") as file:
+        categories = [line.strip() for line in file.readlines() if line.strip()]
+    return set(categories)  # Use a set for fast lookup
 
-    # Resize and normalize image for CLIP
-    inputs = clip_processor(text=texts, images=image, return_tensors="pt", padding=True)
-    return inputs
+
+# Path to Business Categories file
+business_categories_file = "D:/PycharmProjects/Density-Maping/NewProject/BusinessCategories.txt"
+business_categories = load_business_categories(business_categories_file)
 
 
+# Function to find relevant business categories
+def find_relevant_categories(object_name, max_categories=30):
+    """Find business categories related to the detected object."""
+    object_name = object_name.lower()
+    relevant = [cat for cat in business_categories if object_name in cat.lower()]
+    return relevant[:max_categories]  # Limit the number of categories
+
+
+# Function to generate business prompt with relevant categories
+def generate_business_prompt(object_name):
+    """Generate NLP prompt with only related categories."""
+    relevant_categories = find_relevant_categories(object_name)
+    if not relevant_categories:
+        return f"In what kind of businesses can I find a {object_name}?"
+
+    categories_text = ", ".join(relevant_categories)
+    return f"In what kind of businesses can I find a {object_name}? Choose from: {categories_text}"
+
+
+# Function to get NLP response
+def get_nlp_response(prompt):
+    """Get a response from FLAN-T5 with optimized input."""
+    inputs = tokenizer(prompt, return_tensors="pt")
+    output = nlp_model.generate(**inputs, max_length=100)
+    response = tokenizer.decode(output[0], skip_special_tokens=True)
+
+    return response
+
+
+# YOLOv8 Object Detection
 def recognize_with_yolo(image_path):
-    """YOLOv8 object detection with pre-processing"""
+    """YOLOv8 object detection"""
     image = Image.open(image_path)
-
-    # Apply necessary pre-processing steps here (e.g., resizing, normalization)
-    image = image.resize((640, 640))  # Example resizing, adjust as needed
-
-    results = yolo_model(image, conf=0.5, iou=0.4)  # Adjust confidence and NMS threshold
+    results = yolo_model(image, conf=0.5, iou=0.4)
 
     if not results or not results[0].boxes:
-        return None  # No objects detected
+        return None
 
-    # Get the largest object
     result = results[0]
     boxes = result.boxes.xywh.cpu().numpy()
     labels = result.boxes.cls.cpu().numpy()
@@ -77,78 +89,108 @@ def recognize_with_yolo(image_path):
     return largest_label
 
 
-def recognize_with_detr(image_path):
-    """DETR object detection with better pre-processing"""
+# BLIP-Image-Captioning for Object Recognition
+def recognize_with_blip(image_path):
+    """BLIP image captioning"""
     image = Image.open(image_path).convert("RGB")
 
-    # Apply transformations, such as resizing and normalization
-    image = image.resize((800, 800))  # Resize image for DETR
+    inputs = blip_processor(images=image, return_tensors="pt")
+    out = blip_model.generate(**inputs)
+    caption = blip_processor.decode(out[0], skip_special_tokens=True)
 
-    inputs = detr_processor(images=image, return_tensors="pt", do_rescale=False)  # Ensure no additional scaling
-    outputs = detr_model(**inputs)
-
-    target_sizes = torch.tensor([[image.size[1], image.size[0]]])  # Correct target size (height, width)
-    results = detr_processor.post_process_object_detection(outputs, target_sizes=target_sizes, threshold=0.5)[0]
-
-    if len(results['boxes']) == 0:
-        return None
-
-    boxes = results['boxes'].detach().cpu().numpy()
-    labels = results['labels'].detach().cpu().numpy()
-
-    sizes = [w * h for _, _, w, h in boxes]
-    largest_idx = sizes.index(max(sizes))
-    largest_label = labels[largest_idx]
-
-    label_name = detr_model.config.id2label[largest_label]
-
-    return label_name
+    return caption
 
 
+# CLIP Image Classification
 def recognize_with_clip(image_path):
     """CLIP image classification"""
-    texts = ["a car", "a chair", "a dog", "a wrench", "a tool", "an object", "a machine part"]
+    texts = ["car", "chair", "dog", "wrench", "tool", "machine part", "laptop", "phone",
+    "pizza", "burger", "bicycle", "motorcycle", "keyboard", "coffee cup",
+    "television", "microwave", "airplane", "train", "refrigerator", "backpack",
+    "umbrella", "lamp", "stapler", "watch", "glasses", "hat", "shirt", "shoe",
+    "bottle", "cup", "wine glass", "fork", "knife", "spoon", "sandwich",
+    "banana", "apple", "orange", "broccoli", "carrot", "hot dog", "couch",
+    "bed", "toilet", "door", "window", "flower", "plant", "tree", "painting",
+    "clock", "mirror", "headphones", "drone", "tablet", "game controller"]
 
-    inputs = preprocess_for_clip(image_path, texts)  # Pre-process the image for CLIP
+    inputs = clip_processor(
+        text=texts,
+        images=Image.open(image_path).convert("RGB"),
+        return_tensors="pt",
+        padding=True,
+        truncation=True
+    )
+
     outputs = clip_model(**inputs)
 
-    probs = outputs.logits_per_image.softmax(dim=1)  # Convert logits to probabilities
+    probs = outputs.logits_per_image.softmax(dim=1)
     best_idx = probs.argmax().item()
 
-    return texts[best_idx]  # Best matching label
+    return texts[best_idx]
 
 
-def generate_business_prompt(object_name):
-    """Generate NLP prompt"""
-    return f"In what kind of businesses can I find a {object_name}?"
+# ViT-GPT2 Image Captioning
+def recognize_with_vit_gpt2(image_path):
+    """ViT-GPT2 image captioning"""
+    image = Image.open(image_path).convert("RGB")
+
+    inputs = vit_gpt2_processor(images=image, return_tensors="pt")
+
+    with torch.no_grad():
+        outputs = vit_gpt2_model.generate(**inputs)
+
+    caption = vit_gpt2_tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    return caption
 
 
+# Main function
 def main():
-    image_path = "D:/PycharmProjects/Density-Maping/NewProject/TestFiles/test4.jpg"
+    image_path = "D:/PycharmProjects/Density-Maping/NewProject/TestFiles/harry_potter.jpg"
 
     # Try YOLO first
     found_object = recognize_with_yolo(image_path)
     if found_object:
+        print("Detected by YOLO:", found_object)
         prompt = generate_business_prompt(found_object)
         print("Generated Prompt:", prompt)
-    else:
-        print("No object detected by YOLO")
 
-    # If YOLO fails, try DETR
-    found_object = recognize_with_detr(image_path)
+        # Get NLP Response
+        response = get_nlp_response(prompt)
+        print("NLP Model Response:", response)
+
+    # Try BLIP Image Captioning
+    found_object = recognize_with_blip(image_path)
     if found_object:
+        print("Detected by BLIP:", found_object)
         prompt = generate_business_prompt(found_object)
         print("Generated Prompt:", prompt)
-    else:
-        print("No object detected by DETR")
 
-    # If DETR also fails, try CLIP
+        response = get_nlp_response(prompt)
+        print("NLP Model Response:", response)
+
+    # Try CLIP Classification
     found_object = recognize_with_clip(image_path)
     if found_object:
+        print("Detected by CLIP:", found_object)
         prompt = generate_business_prompt(found_object)
         print("Generated Prompt:", prompt)
+
+        response = get_nlp_response(prompt)
+        print("NLP Model Response:", response)
+
+    # Try ViT-GPT2 Image Captioning
+    found_object = recognize_with_vit_gpt2(image_path)
+    if found_object:
+        print("Detected by ViT-GPT2:", found_object)
+        prompt = generate_business_prompt(found_object)
+        print("Generated Prompt:", prompt)
+
+        response = get_nlp_response(prompt)
+        print("NLP Model Response:", response)
+
     else:
-        print("No object detected by CLIP")
+        print("No objects recognized by any model.")
 
 
 if __name__ == "__main__":
