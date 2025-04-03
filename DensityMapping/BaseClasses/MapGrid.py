@@ -113,7 +113,7 @@ class MapGrid(BaseModel):
         for row in range(0, self.y_axis_len):
             for col in range(0, self.x_axis_len):
                 temp_sum, scanned_squares_list = self.calc_square_sum(business_size_ratio, row, col, init_center,
-                                                                      new_business.get_varience(), scanned_squares_list,
+                                                                      new_business.get_variance(), scanned_squares_list,
                                                                       )
                 if temp_sum >= max_sum:  # if the new sum is better than the previous max
                     max_sum = temp_sum
