@@ -17,14 +17,13 @@ class Point(BaseModel):
     x: float
     y: float
 
-    # getters
+
     def get_x(self):
         return self.x
 
     def get_y(self):
         return self.y
 
-    # setters
     def set_x(self, x):
         self.x = x
 
@@ -33,3 +32,6 @@ class Point(BaseModel):
 
     def print_point(self):
         print("(" + str(self.get_x()) + "," + str(self.get_y()) + ")")
+
+    def calculate_distance_to_other_point(self, other: "Point"):
+        return abs(((self.get_y() - other.get_y()) ** 2 + (self.get_x() - other.get_x()) ** 2) ** 0.5)

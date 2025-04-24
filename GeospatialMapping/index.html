@@ -224,6 +224,8 @@
             console.log("📍 Clicked Location:", selectedCoordinates.latitude, selectedCoordinates.longitude);
 
             // 1️⃣ Try Google Places API first
+
+            /*
             const service = new google.maps.places.PlacesService(map);
             const request = { location: clickedLocation, radius: 100, type: ["store"] };
 
@@ -245,14 +247,17 @@
                     console.warn("⚠️ Google Places nearby search failed:", status);
                 }
             });
+            */
 
-            // Run Google Geocoder and OpenStreetMap in parallel
+            // Run Google Geocoder and OpenStreetMap in parallel    
             Promise.all([
                 new Promise(resolve => fallbackToGeocoder(clickedLocation, resolve)),
-                new Promise(resolve => fetchAlternativeGeocode(clickedLocation.lat(), clickedLocation.lng(), resolve))
-            ]).then(([googleResult, osmResult]) => {
+                new Promise(resolve => fetchAlternativeGeocode(clickedLocation.lat(), clickedLocation.lng(), resolve)),
+                new Promise(resolve => fetchHereMapsReverse(clickedLocation.lat(), clickedLocation.lng(), resolve))
+                ]).then(results => {
+                const address = results.find(r => r !== null);
                 if (!addressRetrieved) {
-                    selectedCoordinates.name = googleResult || osmResult || `Lat: ${clickedLocation.lat()}, Lng: ${clickedLocation.lng()}`;
+                    selectedCoordinates.name = address || `Lat: ${clickedLocation.lat()}, Lng: ${clickedLocation.lng()}`;
                 }
             });
         }
@@ -276,6 +281,13 @@
                 .catch(() => callback(null));
         }
 
+        function fetchHereMapsReverse(lat, lng, callback) {
+            const apiKey = "AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY"; // Replace with real key
+            fetch(`https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lng}&lang=en-US&apikey=${apiKey}`)
+                .then(res => res.json())
+                .then(data => callback(data.items?.[0]?.address?.label || null))
+                .catch(() => callback(null));
+        }
 
         function createApproveButton() {
             // Create the button only once
@@ -320,7 +332,6 @@
         }
 
 
-
         // ✅ Approve & Save selected location
         async function approvePoint() {
             if (!selectedCoordinates.latitude || !selectedCoordinates.longitude) {
@@ -330,7 +341,7 @@
 
             // Check if the address is still being retrieved
             if (selectedCoordinates.name === "Retrieving address...") {
-                alert("נא להמתין, אנו מאתרים את הכתובת...");
+                alert("יש לוודא שהמיקום הנבחר תקין, אנו מאתרים את הכתובת!");
                 return; // Prevent saving until address is retrieved
             }
 
