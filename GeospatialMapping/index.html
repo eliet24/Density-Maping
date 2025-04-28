@@ -694,12 +694,56 @@
                                 position: place.geometry.location,
                                 title: place.name,
                                 icon: {
-                                    url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png", // Custom icon for businesses
+                                    url: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png", // Custom icon for businesses
                                     scaledSize: new google.maps.Size(32, 32)
                                 }
                             });
 
                             currentBusinessMarkers.push(marker);
+
+                            marker.addListener('click', () => {
+                                const clickedLocation = marker.getPosition();
+
+                                // Reset selectedCoordinates
+                                selectedCoordinates = {
+                                    latitude: clickedLocation.lat(),
+                                    longitude: clickedLocation.lng(),
+                                    name: place.name || "Selected Business"
+                                };
+
+                                // Remove previous red marker if exists
+                                if (window.currentMarker) {
+                                    window.currentMarker.setMap(null);
+                                }
+                                if (window.approveBtn) {
+                                    window.approveBtn.remove();
+                                }
+                                if (approveBtn) {
+                                    approveBtn.remove();
+                                    approveBtn = null;
+                                }
+
+                                // Create new red marker at business location
+                                window.currentMarker = new google.maps.Marker({
+                                    position: clickedLocation,
+                                    map: map,
+                                    title: place.name || "Selected Business",
+                                    icon: {
+                                        url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                                        scaledSize: new google.maps.Size(16, 16)
+                                    }
+                                });
+
+                                // Create green approve button
+                                createApproveButton();
+                                setTimeout(() => {
+                                    positionApproveButton(clickedLocation);
+                                }, 100);
+
+                                approveBtn.onclick = approvePoint;
+
+                                console.log("📍 Business Marker Selected:", selectedCoordinates.latitude, selectedCoordinates.longitude);
+                            });
                         });
                     } else {
                         console.error("Failed to search nearby businesses:", status);
