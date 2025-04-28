@@ -135,6 +135,16 @@
             { key: "RELIGION", text: "?איפה הבית כנסת" }
         ];
 
+        const categoryTypeMapping = {
+            "FOOD": ["supermarket", "grocery_or_supermarket", "food"],
+            "FASHION": ["clothing_store", "shoe_store"],
+            "NIGHTLIFE_AND_FUN": ["bar", "night_club"],
+            "KINDERGARTEN": ["school", "kindergarten"],
+            "SCHOOL": ["school"],
+            "RELIGION": ["church", "synagogue", "mosque"]
+        };
+
+
         let currentQuestionIndex = 0;
         let map, marker = null;
         let searchBox;
@@ -361,6 +371,12 @@
 
                 if (!result.isConfirmed) {
                     // User chose "No" → Do nothing, allow user to pick a new point
+                    if (window.currentMarker) window.currentMarker.setMap(null);
+                    if (window.approveBtn) window.approveBtn.remove();
+                    if (approveBtn) {
+                        approveBtn.remove();
+                        approveBtn = null;
+                    }
                     return;
                 }
                 // If user pressed "Yes" → continue saving with whatever data we have
@@ -405,6 +421,7 @@
             }
         }
 
+        /*
         function updateQuestion() {
             if (currentQuestionIndex < questions.length) {
                 document.getElementById("question-container").innerText = questions[currentQuestionIndex].text;
@@ -420,6 +437,34 @@
                     } catch (e) {
                         console.error("Window close failed:", e);
                         window.location.href = "about:blank"; // As a last resort, redirect
+                    }
+                }, 2000);
+            }
+        }
+        */
+
+        function updateQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const currentQuestion = questions[currentQuestionIndex];
+                document.getElementById("question-container").innerText = currentQuestion.text;
+                
+                // NEW: Search businesses matching this question!
+                searchBusinessesNearby(currentQuestion.key);
+
+            } else {
+                document.getElementById("question-container").innerText = "Thank You";
+                
+                // Optionally clear businesses when finished
+                currentBusinessMarkers.forEach(marker => marker.setMap(null));
+                currentBusinessMarkers = [];
+
+                setTimeout(() => {
+                    try {
+                        window.close();
+                        window.open("about:blank", "_self").close();
+                    } catch (e) {
+                        console.error("Window close failed:", e);
+                        window.location.href = "about:blank";
                     }
                 }, 2000);
             }
@@ -620,6 +665,49 @@
                 return null;
             }
         }
+
+        let currentBusinessMarkers = []; // Keep track of markers to remove them later
+
+        function searchBusinessesNearby(categoryKey) {
+            if (!map) return;
+            const types = categoryTypeMapping[categoryKey];
+            if (!types) return;
+
+            // Clear previous business markers
+            currentBusinessMarkers.forEach(marker => marker.setMap(null));
+            currentBusinessMarkers = [];
+
+            const service = new google.maps.places.PlacesService(map);
+
+            types.forEach(type => {
+                const request = {
+                    location: map.getCenter(),
+                    radius: 10000, // meters around center (adjust if needed)
+                    type: type
+                };
+
+                service.nearbySearch(request, (results, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK) {
+                        results.forEach(place => {
+                            const marker = new google.maps.Marker({
+                                map: map,
+                                position: place.geometry.location,
+                                title: place.name,
+                                icon: {
+                                    url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png", // Custom icon for businesses
+                                    scaledSize: new google.maps.Size(32, 32)
+                                }
+                            });
+
+                            currentBusinessMarkers.push(marker);
+                        });
+                    } else {
+                        console.error("Failed to search nearby businesses:", status);
+                    }
+                });
+            });
+        }
+
 
         // Fetch the latest project code and initialize map
         document.addEventListener('DOMContentLoaded', fetchProjectCode);
