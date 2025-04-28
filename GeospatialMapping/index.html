@@ -340,10 +340,32 @@
             }
 
             // Check if the address is still being retrieved
+            /*
             if (selectedCoordinates.name === "Retrieving address...") {
                 alert("יש לוודא שהמיקום הנבחר תקין!");
                 return; // Prevent saving until address is retrieved
             }
+            */
+
+            if (selectedCoordinates.name === "Retrieving address...") {
+                const result = await Swal.fire({
+                    title: "המיקום שנבחר אינו עסק",
+                    text: "האם להמשיך בשמירת המיקום?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "כן, שמור מיקום",
+                    cancelButtonText: "לא, חזור למפה",
+                    reverseButtons: true,
+                    focusCancel: true
+                });
+
+                if (!result.isConfirmed) {
+                    // User chose "No" → Do nothing, allow user to pick a new point
+                    return;
+                }
+                // If user pressed "Yes" → continue saving with whatever data we have
+            }
+
 
             const currentQuestion = questions[currentQuestionIndex];
 
