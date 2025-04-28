@@ -430,7 +430,8 @@
                         map: map,
                         title: "Project Location",
                         icon: {
-                            url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                            //url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                            url: "https://toppng.com/uploads/preview/in-location-map-icon-navigation-symbol-ma-google-maps-marker-blue-11562916561qaf3tyejum.png"
                         }
                     });
 
@@ -444,6 +445,7 @@
                     updateQuestion();
 
                     // Listen for search box results
+                    /*
                     searchBox.addListener("places_changed", () => {
                         const places = searchBox.getPlaces();
                         if (places.length === 0) return;
@@ -485,9 +487,79 @@
                         // Click event for saving location
                         approveBtn.onclick = approvePoint;
                     });
+                    */
+
+                    searchBox.addListener("places_changed", () => {
+                        const places = searchBox.getPlaces();
+                        if (places.length === 0) return;
+                        const place = places[0];
+
+                        if (!place.place_id) {
+                            console.error("No place_id found");
+                            return;
+                        }
+
+                        const service = new google.maps.places.PlacesService(map);
+
+                        service.getDetails(
+                            { 
+                                placeId: place.place_id, 
+                                fields: ["name", "geometry", "formatted_address"] // Only request what you need
+                            }, 
+                            (placeDetails, status) => {
+                                if (status !== google.maps.places.PlacesServiceStatus.OK) {
+                                    console.error("PlacesService getDetails failed:", status);
+                                    return;
+                                }
+
+                                const exactLocation = placeDetails.geometry.location;
+
+                                // Remove previous marker and button
+                                if (window.currentMarker) window.currentMarker.setMap(null);
+                                if (window.approveBtn) window.approveBtn.remove();
+                                if (approveBtn) {
+                                    approveBtn.remove();
+                                    approveBtn = null;
+                                }
+
+                                // 📍 NOW use the exact location!
+                                setMarkerAtLocation(exactLocation, placeDetails.name || "Searched Location");
+
+                                // Update the map to zoom and center on the place
+                                map.panTo(exactLocation);
+                                map.setZoom(20);
+
+                                // Store selected coordinates and name
+                                selectedCoordinates.latitude = exactLocation.lat();
+                                selectedCoordinates.longitude = exactLocation.lng();
+                                selectedCoordinates.name = placeDetails.name 
+                                    ? `${placeDetails.name}, ${placeDetails.formatted_address}` 
+                                    : placeDetails.formatted_address;
+
+                                console.log("📍 Selected Location (accurate):", selectedCoordinates.name);
+
+                                // Create the approve button
+                                if (!approveBtn) {
+                                    approveBtn = document.createElement("button");
+                                    approveBtn.innerHTML = '<i class="fas fa-check"></i>'; 
+                                    approveBtn.classList.add("approve-marker-btn");
+                                    document.getElementById("map").appendChild(approveBtn);
+                                }
+
+                                // Position the button after a small delay
+                                setTimeout(() => {
+                                    positionApproveButton(exactLocation);
+                                }, 100);
+
+                                // Click event for saving location
+                                approveBtn.onclick = approvePoint;
+                            }
+                        );
+                    });
 
                     // Click event for saving location
                     //document.getElementById("approve-btn").addEventListener("click", approvePoint);
+
                 })
                 .catch(error => {
                     console.error("Error initializing map:", error);
