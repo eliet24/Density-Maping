@@ -678,87 +678,89 @@
                     if (status === google.maps.places.PlacesServiceStatus.OK) 
                     {
                         results.forEach(place => {
-                            //----------------------------- Added Code ----------------------------- 
+                                //----------------------------- Added Code ----------------------------- 
                             if (!place.place_id) return;
                             service.getDetails({
                                 placeId: place.place_id,
-                                fields: ["name", "geometry", "formatted_address"]
-                            }, (details, status) => {
+                                //fields: ["name", "geometry", "formatted_address"]
+                                fields: ["name", "geometry/location", "geometry/location_type", "geometry/viewport", "formatted_address"]
+                            }, (details, status) => 
+                            {
                                 if (status !== google.maps.places.PlacesServiceStatus.OK) {
                                     console.warn("getDetails failed:", status);
                                     return;
                                 }
-                                const exactLocation = details.geometry.location;
-                            //----------------------------------------------------------------------                           
+                                //const exactLocation = details.geometry.location;
+                                const exactLocation = details.geometry.viewport.getCenter();
+                                //----------------------------------------------------------------------                           
 
-                            const marker = new google.maps.Marker({
-                                map: map,
-                                position: place.geometry.location,
-                                title: place.name,
-                                icon: {
-                                    url: "https://maps.google.com/mapfiles/ms/icons/pink-dot.png", // Custom icon for businesses
-                                    scaledSize: new google.maps.Size(32, 32)
-                                }
-                            });
-
-                            currentBusinessMarkers.push(marker);
-
-                            marker.addListener('click', () => {
-                                const clickedLocation = marker.getPosition();
-
-                                // Reset selectedCoordinates
-                                selectedCoordinates = {
-                                    /*
-                                    latitude: clickedLocation.lat(),
-                                    longitude: clickedLocation.lng(),
-                                    name: place.name || "Selected Business"
-                                    */
-                                    latitude: exactLocation.lat(),
-                                    longitude: exactLocation.lng(),
-                                    name: details.name || "Selected Business"
-                                };
-
-                                // Remove previous red marker if exists
-                                if (window.currentMarker) window.currentMarker.setMap(null);
-                                if (window.approveBtn) window.approveBtn.remove();
-                                if (approveBtn) {
-                                    approveBtn.remove();
-                                    approveBtn = null;
-                                }
-
-                                // Create new red marker at business location
-                                window.currentMarker = new google.maps.Marker({
-                                    //position: clickedLocation,
-                                    position: exactLocation,
+                                const marker = new google.maps.Marker({
                                     map: map,
-                                    //title: place.name || "Selected Business",
-                                    title: details.name || "Selected Business",
+                                    position: place.geometry.location,
+                                    title: place.name,
                                     icon: {
-                                        url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-                                        scaledSize: new google.maps.Size(16, 16)
+                                        url: "https://maps.google.com/mapfiles/ms/icons/pink-dot.png", // Custom icon for businesses
+                                        scaledSize: new google.maps.Size(32, 32)
                                     }
                                 });
 
-                                // Create green approve button
-                                createApproveButton();
-                                setTimeout(() => {
-                                    //positionApproveButton(clickedLocation);
-                                    positionApproveButton(exactLocation);
-                                }, 100);
+                                currentBusinessMarkers.push(marker);
 
-                                approveBtn.onclick = approvePoint;
+                                marker.addListener('click', () => {
+                                    const clickedLocation = marker.getPosition();
 
-                                console.log("📍 Business Marker Selected:", selectedCoordinates.latitude, selectedCoordinates.longitude);
+                                    // Reset selectedCoordinates
+                                    selectedCoordinates = {
+                                        /*
+                                        latitude: clickedLocation.lat(),
+                                        longitude: clickedLocation.lng(),
+                                        name: place.name || "Selected Business"
+                                        */
+                                        latitude: exactLocation.lat(),
+                                        longitude: exactLocation.lng(),
+                                        name: details.name || "Selected Business"
+                                    };
+
+                                    // Remove previous red marker if exists
+                                    if (window.currentMarker) window.currentMarker.setMap(null);
+                                    if (window.approveBtn) window.approveBtn.remove();
+                                    if (approveBtn) {
+                                        approveBtn.remove();
+                                        approveBtn = null;
+                                    }
+
+                                    // Create new red marker at business location
+                                    window.currentMarker = new google.maps.Marker({
+                                        //position: clickedLocation,
+                                        position: exactLocation,
+                                        map: map,
+                                        //title: place.name || "Selected Business",
+                                        title: details.name || "Selected Business",
+                                        icon: {
+                                            url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                                            scaledSize: new google.maps.Size(16, 16)
+                                        }
+                                    });
+
+                                    // Create green approve button
+                                    createApproveButton();
+                                    setTimeout(() => {
+                                        //positionApproveButton(clickedLocation);
+                                        positionApproveButton(exactLocation);
+                                    }, 100);
+
+                                    approveBtn.onclick = approvePoint;
+
+                                    console.log("📍 Business Marker Selected:", selectedCoordinates.latitude, selectedCoordinates.longitude);
+                                });
                             });
                         });
-                    });
-                } else {
-                    console.error("Failed to search nearby businesses:", status);
-                }
+                    } else {
+                        console.error("Failed to search nearby businesses:", status);
+                    }
+                });
             });
-        });
         }
-
 
         // Fetch the latest project code and initialize map
         document.addEventListener('DOMContentLoaded', fetchProjectCode);
