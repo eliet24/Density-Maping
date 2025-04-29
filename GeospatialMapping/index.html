@@ -678,7 +678,6 @@
                     if (status === google.maps.places.PlacesServiceStatus.OK) 
                     {
                         results.forEach(place => {
-                                //----------------------------- Added Code ----------------------------- 
                             if (!place.place_id) return;
                             service.getDetails({
                                 placeId: place.place_id,
@@ -689,8 +688,7 @@
                                     console.warn("getDetails failed:", status);
                                     return;
                                 }
-                                const exactLocation = details.geometry.location;
-                                //----------------------------------------------------------------------                           
+                                const exactLocation = details.geometry.location;                           
 
                                 const marker = new google.maps.Marker({
                                     map: map,
@@ -709,14 +707,9 @@
 
                                     // Reset selectedCoordinates
                                     selectedCoordinates = {
-                                        /*
-                                        latitude: clickedLocation.lat(),
-                                        longitude: clickedLocation.lng(),
-                                        name: place.name || "Selected Business"
-                                        */
                                         latitude: exactLocation.lat(),
                                         longitude: exactLocation.lng(),
-                                        name: details.name || "Selected Business"
+                                        name: `${details.name}, ${details.formatted_address}` || "Selected Business"
                                     };
 
                                     // Remove previous red marker if exists
@@ -732,7 +725,6 @@
                                         //position: clickedLocation,
                                         position: exactLocation,
                                         map: map,
-                                        //title: place.name || "Selected Business",
                                         title: details.name || "Selected Business",
                                         icon: {
                                             url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
