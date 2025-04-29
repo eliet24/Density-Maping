@@ -682,16 +682,14 @@
                             if (!place.place_id) return;
                             service.getDetails({
                                 placeId: place.place_id,
-                                //fields: ["name", "geometry", "formatted_address"]
-                                fields: ["name", "geometry/location", "geometry/location_type", "geometry/viewport", "formatted_address"]
+                                fields: ["name", "geometry", "formatted_address"]
                             }, (details, status) => 
                             {
                                 if (status !== google.maps.places.PlacesServiceStatus.OK) {
                                     console.warn("getDetails failed:", status);
                                     return;
                                 }
-                                //const exactLocation = details.geometry.location;
-                                const exactLocation = details.geometry.viewport.getCenter();
+                                const exactLocation = details.geometry.location;
                                 //----------------------------------------------------------------------                           
 
                                 const marker = new google.maps.Marker({
