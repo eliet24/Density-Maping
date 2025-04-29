@@ -667,7 +667,7 @@
             types.forEach(type => {
                 const request = {
                     location: map.getCenter(),
-                    radius: 10000, // meters around center (adjust if needed)
+                    radius: 7000, // meters around center (adjust if needed)
                     type: type
                 };
 
@@ -679,7 +679,7 @@
                                 position: place.geometry.location,
                                 title: place.name,
                                 icon: {
-                                    url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png", // Custom icon for businesses
+                                    url: "https://maps.google.com/mapfiles/ms/icons/pink-dot.png", // Custom icon for businesses
                                     scaledSize: new google.maps.Size(32, 32)
                                 }
                             });
