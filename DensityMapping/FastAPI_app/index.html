@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Area Mapping</title>
+        <!-- Add Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Add Leaflet Search JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-search/3.0.9/leaflet-search.min.js"></script>
+        <!-- Add Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <!-- Add Leaflet Search CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-search/3.0.9/leaflet-search.min.css" />
+
+    <style>
+
+
+        /* Basic CSS styles for positioning */
+        .button-container {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .button-container button {
+            margin-right: 10px; /* Adds space between the buttons */
+        }
+
+        #userFormSection {
+            margin-bottom: 20px;
+        }
+
+
+        /* General Styling */
+        body {
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: lightblue;
+        }
+
+        #left-content {
+            margin-top: -50px; /* Adjust this value to move the frames higher */
+            margin-left: -25px;
+            position: relative; /* Ensure it moves relative to its original position */
+            flex: 1;
+            padding: 30px;
+            box-sizing: border-box;
+            background-color: lightblue;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        #map {
+            flex: 5;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            font-family: 'Roboto', sans-serif;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-section {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: lightblue;
+            border: 1px solid #ddd;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="text"], input[type="date"], input[type="number"], input[type="password"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
+            border-color: #007bff;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 80px;
+        }
+
+        button {
+            background-color: #20B2AA;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #18453B;
+        }
+
+        /* Button Group Styling */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+            background-color: #20B2AA;
+            color: #333;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .button-group button:hover {
+            background-color: #20B2AA;
+            color: white;
+        }
+
+        /* Checkbox Group Styling */
+        .checkbox-group {
+            column-count: 2;
+            column-gap: 20px; /* Adjust as needed */
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center; /* Vertically align the checkbox and label */
+            width: 50%; /* Two items per row */
+            margin-bottom: 30px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 10px; /* Space between checkbox and label */
+        }
+
+        /* Increase space between checkboxes and Additional Business Information section */
+        #businessDataLabel {
+            margin-top: 10px; /* Adjust this value to increase the space */
+        }
+
+        #businessData {
+            margin-top: 10px; /* Adjust this value for additional space above the text area */
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px; /* Space between checkbox and label */
+            vertical-align: middle; /* Align checkbox with the label text */
+        }
+
+        .checkbox-group label {
+            margin-right: 15px;
+            color: #333;
+        }
+
+        /* Custom Styles for Range Control */
+        #radiusControlGroup {
+            margin-bottom: 15px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        #radiusValue {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+
+        /* Modal Styling for Login */
+        #loginModal {
+            display: none;
+            position: fixed;
+            z-index: 2000; /* Higher than the map and other elements */
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%); /* Centers the modal */
+            width: 400px; /* Width of the modal */
+            padding: 50px; /* Padding inside the modal */
+            background-color: white; /* Background color */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Shadow effect */
+        }
+
+        #loginModal h2 {
+            margin-bottom: 20px;
+        }
+
+        /* Modal Overlay Styling */
+        #modalOverlay {
+            display: none;
+            position: fixed;
+            z-index: 1999; /* Lower than the modal, higher than other content */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+        }
+
+
+        /* Video Overlay Styling */
+        #videoOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999; /* Higher z-index to ensure it overlays everything */
+            background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Video Styling */
+        #loadingVideo {
+            width: 100%; /* Adjust width to fit */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        /* Button styles */
+        button.active {
+        background-color: #004953; /* Change color to blue when pressed */
+        color: white; /* Ensure text is visible on the blue background */
+        border-radius: 10px; /* Modify shape if needed */
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <div id="searchContainer"></div>
+
+    <!-- Video Overlay -->
+    <div id="videoOverlay">
+        <video id="loadingVideo" autoplay muted>
+            <source src="start_animation.mp4" type="video/mp4"> <!-- Change to your video file path -->
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+
+    <div id="left-content">
+        <!-- Create New User Form -->
+        <div id="userFormSection" class="form-section">
+            <h2>Create New User</h2>
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="userId">User ID:</label>
+                    <input type="text" id="userId" required>
+                </div>
+                <div class="form-group">
+                    <label for="userName">Name:</label>
+                    <input type="text" id="userName" required>
+                </div>
+                <div class="form-group">
+                    <label for="birthDate">Birth Date:</label>
+                    <input type="date" id="birthDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="income">Income:</label>
+                    <input type="number" id="income" required>
+                </div>
+                <div class="form-group">
+                    <label for="relationshipStatus">Relationship Status:</label>
+                    <select id="relationshipStatus">
+                        <option value="married">Married</option>
+                        <option value="bachelor">Bachelor</option>
+                        <option value="divorced">Divorced</option>
+                        <option value="in_relationship">In Relationship</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+
+                <!-- Button container for Create User and Login buttons -->
+                <div class="button-container">
+                    <button type="submit">Create User</button>
+                    <button id="loginButton" type="button">Login</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="modalOverlay"></div>
+        <div id="loginModal">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginUserId">User ID:</label>
+                    <input type="text" id="loginUserId" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <!-- Area Details Form -->
+        <div id="areaFormSection" class="form-section">
+            <h2>Area Details</h2>
+            <form id="areaForm">
+                <div class="button-group">
+                    <label>Area Type:</label>
+                    <button type="button" onclick="setAreaType('HOME')">Home Area</button>
+                    <button type="button" onclick="setAreaType('WORK')">Work Area</button>
+                    <button type="button" onclick="setAreaType('OTHER')">Other Area</button>
+                </div>
+                <div class="button-group">
+                    <label>Drawing Mode:</label>
+                    <button type="button" onclick="setDrawingMode('LINE')">Draw Lines</button>
+                    <button type="button" onclick="setDrawingMode('CIRCLE')">Draw Circle</button>
+                </div>
+                <div id="radiusControlGroup" class="form-group" style="display: none;">
+                    <label for="radius">Circle Radius (meters):</label>
+                    <input type="range" id="radius" min="100" max="2000" value="500" step="100">
+                    <span id="radiusValue">500m</span>
+                </div>
+
+                <div class="button-group">
+                    <button id="showBusinessCategories" class="toggle-button">Show Business Categories</button>
+                    <button id="showInstitutionCategories" class="toggle-button">Show Institution Categories</button>
+                </div>
+
+
+                <div id="businessCategoriesContainer" class="checkbox-group" style="display: none;">
+                    <h3>Business Categories</h3>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="FASHION" name="business_category">
+                        <label for="FASHION">Fashion</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="FOOD" name="business_category">
+                        <label for="FOOD">Food</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="HEALTH_AND_WELLNESS" name="business_category">
+                        <label for="HEALTH_AND_WELLNESS">Health & Wellness</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ELECTRONICS_AND_TECH" name="business_category">
+                        <label for="ELECTRONICS_AND_TECH">Electronics & Tech</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="BEAUTY_AND_PERSONAL_CARE" name="business_category">
+                        <label for="BEAUTY_AND_PERSONAL_CARE">Beauty & Personal Care</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="FINANCE_AND_INSURANCE" name="business_category">
+                        <label for="FINANCE_AND_INSURANCE">Finance & Insurance</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="AUTOMOTIVE" name="business_category">
+                        <label for="AUTOMOTIVE">Automotive</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ENTERTAINMENT_AND_MEDIA" name="business_category">
+                        <label for="ENTERTAINMENT_AND_MEDIA">Entertainment & Media</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="EDUCATION" name="business_category">
+                        <label for="EDUCATION">Education</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="HOSPITALITY_AND_TOURISM" name="business_category">
+                        <label for="HOSPITALITY_AND_TOURISM">Hospitality & Tourism</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="AGRICULTURE_AND_FARMING" name="business_category">
+                        <label for="AGRICULTURE_AND_FARMING">Agriculture & Farming</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="LEGAL_SERVICES" name="business_category">
+                        <label for="LEGAL_SERVICES">Legal Services</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="NIGHTLIFE" name="business_category">
+                        <label for="NIGHTLIFE">Nightlife</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="PETS_AND_ANIMALS" name="business_category">
+                        <label for="PETS_AND_ANIMALS">Pets & Animals</label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="businessAdditionalInfo">Additional Business Information:</label>
+                        <textarea id="businessAdditionalInfo"></textarea>
+                    </div>
+                </div>
+
+
+                <div id="institutionCategoriesContainer" class="checkbox-group" style="display: none;">
+                    <h3>Institution Categories</h3>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="GOVERNMENTAL" name="institution" value="GOVERNMENTAL">
+                        <label for="GOVERNMENTAL">Governmental</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="HEALTHCARE" name="institution" value="HEALTHCARE">
+                        <label for="HEALTHCARE">Healthcare</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="PUBLIC_SAFETY_AND_EMERGENCY_SERVICES" name="institution" value="PUBLIC_SAFETY_AND_EMERGENCY_SERVICES">
+                        <label for="PUBLIC_SAFETY_AND_EMERGENCY_SERVICES">Public Safety & Emergency Services</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="JUDICIAL_AND_LEGAL" name="institution" value="JUDICIAL_AND_LEGAL">
+                        <label for="JUDICIAL_AND_LEGAL">Judicial & Legal</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="TRANSPORTATION_AND_INFRASTRUCTURE" name="institution" value="TRANSPORTATION_AND_INFRASTRUCTURE">
+                        <label for="TRANSPORTATION_AND_INFRASTRUCTURE">Transportation & Infrastructure</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ECONOMIC_AND_FINANCIAL" name="institution" value="ECONOMIC_AND_FINANCIAL">
+                        <label for="ECONOMIC_AND_FINANCIAL">Economic & Financial</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="CULTURE_AND_SPORTS" name="institution" value="CULTURE_AND_SPORTS">
+                        <label for="CULTURE_AND_SPORTS">Culture & Sports</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="SOCIAL_AND_WELFARE_SERVICES" name="institution" value="SOCIAL_AND_WELFARE_SERVICES">
+                        <label for="SOCIAL_AND_WELFARE_SERVICES">Social & Welfare Services</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="LABOR_AND_WORKFORCE" name="institution" value="LABOR_AND_WORKFORCE">
+                        <label for="LABOR_AND_WORKFORCE">Labor & Workforce</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="RELIGIOUS_INSTITUTIONS" name="institution" value="RELIGIOUS_INSTITUTIONS">
+                        <label for="RELIGIOUS_INSTITUTIONS">Religious Institutions</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="EDUCATIONAL_INSTITUTION" name="institution" value="EDUCATIONAL_INSTITUTION">
+                        <label for="EDUCATIONAL_INSTITUTION">Educational Institution</label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="institutionAdditionalInfo">Additional Institution Information:</label>
+                        <textarea id="institutionAdditionalInfo"></textarea>
+                    </div>
+                </div>
+
+                <button type="submit">Save Area</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+
+    <script>
+
+
+        const BACKEND_URL = 'http://localhost:8000';  // Adjust this if your backend is on a different port
+        let currentUser = null;
+
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([51.505, -0.09], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            drawnItems = new L.FeatureGroup().addTo(map);
+        }
+
+        // Show login modal
+        document.getElementById('loginButton').addEventListener('click', function () {
+            document.getElementById('loginModal').style.display = 'block';
+            document.getElementById('modalOverlay').style.display = 'block';
+        });
+
+        // Close login modal
+        document.getElementById('modalOverlay').addEventListener('click', function () {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('modalOverlay').style.display = 'none';
+        });
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const userId = document.getElementById('loginUserId').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const formData = new FormData();
+                formData.append('username', userId);
+                formData.append('password', password);
+
+                const response = await fetch(`${BACKEND_URL}/token`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentUser = {
+                        token: result.access_token,
+                        userId: userId
+                    };
+                    alert('Logged in successfully!');
+                    document.getElementById('userFormSection').style.display = 'none';  // Hide create user form
+                    document.getElementById('loginModal').style.display = 'none';  // Close login modal
+                    document.getElementById('modalOverlay').style.display = 'none';
+                } else {
+                    alert('Login failed. Please check your credentials.');
+                }
+            } catch (error) {
+                alert('Error logging in: ' + error.message);
+            }
+        });
+
+        document.getElementById('userForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userData = {
+                user_id: document.getElementById('userId').value,
+                user_name: document.getElementById('userName').value,
+                user_birth_date: document.getElementById('birthDate').value,
+                user_income: parseFloat(document.getElementById('income').value),
+                user_relationship_status: document.getElementById('relationshipStatus').value,
+                password: document.getElementById('password').value
+            };
+
+            console.log('Attempting to send user data:', userData);
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/users/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const result = await response.json();
+                console.log('Server response:', result);
+
+                if (response.ok) {
+                    alert('User created successfully!');
+                    await loginUser(userData.user_id, userData.password);
+                } else {
+                    let errorMessage;
+                    if (typeof result.detail === 'object') {
+                        errorMessage = JSON.stringify(result.detail, null, 2);
+                    } else {
+                        errorMessage = result.detail || 'Unknown error occurred';
+                    }
+                    console.error('Error details:', result);
+                    alert(`Error creating user:\n${errorMessage}`);
+                }
+            } catch (error) {
+                console.error('Network or parsing error:', error);
+                alert(`Error creating user: ${error.message}`);
+            }
+        });
+
+        async function loginUser(userId, password) {
+            const formData = new FormData();
+            formData.append('username', userId);
+            formData.append('password', password);
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/token`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    currentUser = {
+                        token: result.access_token,
+                        userId: userId
+                    };
+                    alert('Logged in successfully!');
+                }
+            } catch (error) {
+                alert('Error logging in: ' + error.message);
+            }
+        }
+
+        document.getElementById('areaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentUser) {
+                alert('Please create a user and login first!');
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]');
+            let isChecked = false;
+
+            // Check if any checkbox is selected
+            for (let i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].checked) {
+                    isChecked = true;
+                    break;
+                }
+            }
+
+            if (!isChecked) {
+                e.preventDefault(); // Prevent form submission
+                alert('Please select at least one business category before saving the area.');
+                return false;
+            }
+
+            const coordinates = Array.from(drawnItems.getLayers()).map(layer => {
+                if (layer instanceof L.Circle) {
+                    return {
+                        lat: layer.getLatLng().lat,
+                        lng: layer.getLatLng().lng
+                    };
+                } else if (layer instanceof L.Polyline) {
+                    return layer.getLatLngs().map(latLng => ({
+                        lat: latLng.lat,
+                        lng: latLng.lng
+                    }));
+                }
+            });
+
+            // Gather selected business and institution categories
+            const selectedBusinesses = Array.from(document.querySelectorAll('input[name="business_category"]:checked'))
+                .map(input => input.id);
+            const selectedInstitutions = Array.from(document.querySelectorAll('input[name="institution"]:checked'))
+                .map(input => input.value);
+
+            // Construct the area data object
+            const areaData = {
+                area_type: currentAreaType || 'OTHER', // Default if undefined
+                shape_type: currentDrawingMode || 'CIRCLE',
+                coordinates: coordinates,
+                radius: currentDrawingMode === 'CIRCLE' ? parseFloat(document.getElementById('radius').value) : null,
+                missing_businesses: selectedBusinesses ,
+                missing_institutions: selectedInstitutions ,
+                business_data: document.getElementById('businessAdditionalInfo').value || '',
+                institution_data: document.getElementById('institutionAdditionalInfo').value || ''
+            };
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/areas/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentUser.token}`
+                    },
+                    body: JSON.stringify(areaData)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Area saved successfully!');
+                    drawnItems.clearLayers();
+
+                    // Clear all checkboxes and text areas in "Area Details" section
+                    clearAreaDetails();
+                    // Reset the drawing mode
+                    currentDrawingMode = null;
+                    document.getElementById('radiusControlGroup').style.display = 'none';
+                    // Reset the active button styles
+                    Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                        btn.style.backgroundColor = '#20B2AA';
+                        btn.style.color = '';
+                    });
+
+                } else {
+                    alert(`Error: ${JSON.stringify(result.detail)}`);
+                }
+            } catch (error) {
+                alert('Error saving area: ' + error.message);
+            }
+            fetchAndDisplayAreas();
+        });
+
+        function setAreaType(type) {
+            currentAreaType = type;
+            Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                btn.style.backgroundColor = btn.textContent.includes(type) ? '#007bff' : '';
+                btn.style.color = btn.textContent.includes(type) ? 'white' : '';
+            });
+        }
+
+
+        function setDrawingMode(mode) {
+            currentDrawingMode = mode;
+            document.getElementById('radiusControlGroup').style.display = mode === 'CIRCLE' ? 'block' : 'none';
+            Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                if (btn.textContent.includes('Draw')) {
+                    btn.style.backgroundColor = btn.textContent.includes(mode) ? '#007bff' : '';
+                    btn.style.color = btn.textContent.includes(mode) ? 'white' : '';
+                }
+            });
+            drawnItems.clearLayers();
+        }
+
+        document.getElementById('radius').addEventListener('input', function(e) {
+            document.getElementById('radiusValue').textContent = e.target.value + 'm';
+        });
+
+        function onMapClick(e) {
+            if (!currentDrawingMode || !currentAreaType) {
+                // alert('Please select an area type and drawing mode first!');
+                return;
+            }
+
+            drawnItems.clearLayers();
+
+            if (currentDrawingMode === 'CIRCLE') {
+                const radius = parseInt(document.getElementById('radius').value);
+                L.circle(e.latlng, {radius: radius}).addTo(drawnItems);
+            } else if (currentDrawingMode === 'LINE') {
+                const points = [
+                    e.latlng,
+                    [e.latlng.lat + 0.01, e.latlng.lng + 0.01]
+                ];
+
+                L.polyline(points).addTo(drawnItems);
+            }
+        }
+
+        window.onload = function() {
+            initMap();
+            map.on('click', onMapClick);
+            fetchAndDisplayAreas(); // Load areas on map initialization
+        };
+
+        // Hide video overlay after the video ends
+        document.getElementById('loadingVideo').addEventListener('ended', function() {
+            document.getElementById('videoOverlay').style.display = 'none'; // Hide overlay
+        });
+
+        function saveArea() {
+            // Get selected business categories (your existing code)
+            const missingBusinesses = Array.from(document.querySelectorAll('input[name="missing_businesses"]:checked'))
+                .map(input => input.value);
+
+            // Get selected institution categories
+            const selectedInstitutions = Array.from(document.querySelectorAll('input[name="institution"]:checked'))
+                .map(checkbox => checkbox.value);
+
+            const areaData = {
+                area_type: document.querySelector('input[name="area_type"]:checked').value,
+                shape_type: document.querySelector('input[name="drawing_mode"]:checked').value,
+                coordinates: [], // You need to implement this based on your map drawing logic
+                radius: parseFloat(document.getElementById('radiusValue').textContent.replace('m', '')),
+                missing_businesses: missingBusinesses,
+                missing_institutions: selectedInstitutions,
+                business_data: document.getElementById('businessAdditionalInfo')?.value || '',
+                institution_data: document.getElementById('institutionAdditionalInfo')?.value || ''
+            };
+
+            console.log('Sending area data:', JSON.stringify(areaData));  // Log the data being sent
+
+            fetch('/areas/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                },
+                body: JSON.stringify(areaData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Area saved:', data);
+                alert('Area saved successfully!');
+
+            })
+            .catch(error => {
+                console.error('Error saving area:', error);
+                alert(`Error saving area: ${error.detail || 'Please try again.'}`);
+            });
+        }
+
+        // Add this function to toggle the "active" class
+        function toggleButtonActive(button) {
+            // Toggle the "active" class for the clicked button (on/off)
+            button.classList.toggle('active');
+        }
+
+        // Attach the function to the buttons in the button-group
+        document.querySelectorAll('.button-group button').forEach(button => {
+            button.addEventListener('click', function() {
+                toggleButtonActive(this);
+            });
+        });
+
+        // Create search control elements
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.id = 'locationSearch';
+        searchInput.placeholder = 'Search for a location...';
+        searchInput.className = 'form-control';
+
+        const searchResultsList = document.createElement('ul');
+        searchResultsList.id = 'searchResultsList';
+        searchResultsList.className = 'search-results-list';
+
+        // Add search elements to the search container
+        const searchContainer = document.getElementById('searchContainer');
+        searchContainer.appendChild(searchInput);
+        searchContainer.appendChild(searchResultsList);
+
+        // Add styles
+        const styles = `
+          #searchContainer {
+            position: absolute;
+            top: 30px;
+            left: 400px;
+            z-index: 1000;
+            width: 300px;
+          }
+
+          #locationSearch {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+          }
+
+          .search-results-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background: white;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+          }
+
+          .search-results-list li {
+            padding: 8px;
+            cursor: pointer;
+          }
+
+          .search-results-list li:hover {
+            background: #f0f0f0;
+          }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = styles;
+        document.head.appendChild(styleSheet);
+
+        // Add search functionality
+        let timeoutId;
+
+        searchInput.addEventListener('input', function(e) {
+          clearTimeout(timeoutId);
+          const query = e.target.value.trim();
+
+          if (query.length < 3) {
+            searchResultsList.style.display = 'none';
+            return;
+          }
+
+          timeoutId = setTimeout(() => {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+              .then(response => response.json())
+              .then(data => {
+                searchResultsList.innerHTML = '';
+
+                if (data.length > 0) {
+                  data.slice(0, 5).forEach(result => {
+                    const li = document.createElement('li');
+                    li.textContent = result.display_name;
+                    li.addEventListener('click', () => {
+                      const lat = parseFloat(result.lat);
+                      const lon = parseFloat(result.lon);
+
+                      // Center map on selected location
+                      map.setView([lat, lon], 13);
+
+                      // Optional: Add a marker
+                      L.marker([lat, lon]).addTo(map);
+
+                      // Clear search
+                      searchInput.value = result.display_name;
+                      searchResultsList.style.display = 'none';
+                    });
+                    searchResultsList.appendChild(li);
+                  });
+                  searchResultsList.style.display = 'block';
+                } else {
+                  searchResultsList.style.display = 'none';
+                }
+              })
+              .catch(error => {
+                console.error('Error fetching search results:', error);
+                searchResultsList.style.display = 'none';
+              });
+          }, 300);
+        });
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!searchContainer.contains(e.target)) {
+            searchResultsList.style.display = 'none';
+          }
+        });
+
+
+        document.addEventListener('DOMContentLoaded', function(e) {
+            e.preventDefault();
+            // Get all buttons and containers
+            const showBusinessCategoriesBtn = document.getElementById('showBusinessCategories');
+            const showInstitutionCategoriesBtn = document.getElementById('showInstitutionCategories');
+            const businessCategoriesContainer = document.getElementById('businessCategoriesContainer');
+            const institutionCategoriesContainer = document.getElementById('institutionCategoriesContainer');
+
+            // Category enum mappings
+            const CATEGORIES = {
+                // Business Categories
+                business: {
+                    'Fashion': 'FASHION',
+                    'Food': 'FOOD',
+                    'Health & Wellness': 'HEALTH_AND_WELLNESS',
+                    'Electronics & Tech': 'ELECTRONICS_AND_TECH',
+                    'Beauty & Personal Care': 'BEAUTY_AND_PERSONAL_CARE',
+                    'Finance & Insurance': 'FINANCE_AND_INSURANCE',
+                    'Automotive': 'AUTOMOTIVE',
+                    'Entertainment & Media': 'ENTERTAINMENT_AND_MEDIA',
+                    'Education': 'EDUCATION',
+                    'Hospitality & Tourism': 'HOSPITALITY_AND_TOURISM',
+                    'Agriculture & Farming': 'AGRICULTURE_AND_FARMING',
+                    'Legal Services': 'LEGAL_SERVICES',
+                    'Nightlife': 'NIGHTLIFE',
+                    'Pets & Animals': 'PETS_AND_ANIMALS'
+                },
+                // Institution Categories
+                institution: {
+                    'Governmental': 'GOVERNMENTAL',
+                    'Healthcare': 'HEALTHCARE',
+                    'Public Safety & Emergency Services': 'PUBLIC_SAFETY_AND_EMERGENCY',
+                    'Judicial & Legal': 'JUDICIAL_AND_LEGAL',
+                    'Transportation & Infrastructure': 'TRANSPORTATION_AND_INFRASTRUCTURE',
+                    'Economic & Financial': 'ECONOMIC_AND_FINANCIAL',
+                    'Culture & Sports': 'CULTURE_AND_SPORTS',
+                    'Social & Welfare Services': 'SOCIAL_AND_WELFARE',
+                    'Labor & Workforce': 'LABOR_AND_WORKFORCE',
+                    'Religious Institutions': 'RELIGIOUS',
+                    'Educational Institution': 'EDUCATIONAL'
+                }
+            };
+
+        });
+
+        // Function to clear all checkboxes and text areas in "Area Details" section
+        function clearAreaDetails() {
+            // Clear all checkboxes
+            document.querySelectorAll('#areaForm input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            // Clear all text areas
+            document.querySelectorAll('#areaForm textarea').forEach(textarea => {
+                textarea.value = '';
+            });
+        }
+
+        // Add these event listeners to handle showing/hiding the containers
+        document.getElementById('showBusinessCategories').addEventListener('click', function(e) {
+            e.preventDefault();
+            const businessContainer = document.getElementById('businessCategoriesContainer');
+            const institutionContainer = document.getElementById('institutionCategoriesContainer');
+
+            // Hide institution container and toggle visibility of business container
+            institutionContainer.style.display = 'none';
+            businessContainer.style.display = businessContainer.style.display === 'none' ? 'block' : 'none';
+
+            // Clear all checkboxes and text areas in "Area Details" section
+            clearAreaDetails();
+        });
+
+        document.getElementById('showInstitutionCategories').addEventListener('click', function(e) {
+            e.preventDefault();
+            const institutionContainer = document.getElementById('institutionCategoriesContainer');
+            const businessContainer = document.getElementById('businessCategoriesContainer');
+
+            // Hide business container and toggle visibility of institution container
+            businessContainer.style.display = 'none';
+            institutionContainer.style.display = institutionContainer.style.display === 'none' ? 'block' : 'none';
+
+            // Clear all checkboxes and text areas in "Area Details" section
+            clearAreaDetails();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Clear all text boxes in "Create New User" section on page load
+            document.getElementById('userForm').reset();
+        });
+
+
+
+
+        function fetchAndDisplayAreas() {
+            fetch(`${BACKEND_URL}/all_areas`)
+                .then(response => {
+                    console.log("API Response Status:", response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(areas => {
+                    console.log("Fetched areas data:", areas);
+                    areas.forEach(area => {
+                        console.log("Processing area:", area);
+
+                        if (!area.coordinates || !Array.isArray(area.coordinates) || area.coordinates.length === 0) {
+                            console.error("Invalid or missing coordinates for area:", area.id);
+                            return;
+                        }
+
+                        const latLng = area.coordinates[0]; // Assuming coordinates is an array of objects with lat and lng
+                        const radius = area.radius || 500; // Default radius if not provided
+
+                        // Determine the business and institution types
+                        let businessType = area.missing_businesses && area.missing_businesses.length > 0
+                            ? area.missing_businesses[0]
+                            : null;
+
+                        let institutionType = area.missing_institutions && area.missing_institutions.length > 0
+                            ? area.missing_institutions[0]
+                            : null;
+
+                        let color = "blue"; // Default color
+                        if (businessType) {
+                            color = getColorForBusinessType(businessType);
+                        } else if (institutionType) {
+                            color = getColorForInstitutionType(institutionType);
+                        }
+
+                        console.log(`Drawing circle at (${latLng.lat}, ${latLng.lng}) with radius ${radius} and color ${color}`);
+
+                        // Create the circle and add a click event listener
+                        const circle = L.circle([latLng.lat, latLng.lng], {
+                            color: color,
+                            radius: radius
+                        }).addTo(map);
+
+                        // Add click event listener to the circle
+                        circle.on('click', () => {
+                            displayAreaDetails(area);  // Call the function to display the details of the clicked area
+                        });
+                    });
+                })
+                .catch(error => console.error("Error fetching or displaying areas:", error));
+        }
+
+
+        function getColorForBusinessType(type) {
+            const businessColors = {
+                "FASHION": "purple",
+                "FOOD": "orange",
+                "HEALTH_AND_WELLNESS": "green",
+                "ELECTRONICS_AND_TECH": "blue",
+                "BEAUTY_AND_PERSONAL_CARE": "pink",
+                "FINANCE_AND_INSURANCE": "gold",
+                "AUTOMOTIVE": "gray",
+                "ENTERTAINMENT_AND_MEDIA": "lime",
+                "EDUCATION": "cyan",
+                "HOSPITALITY_AND_TOURISM": "teal",
+                "AGRICULTURE_AND_FARMING": "brown",
+                "LEGAL_SERVICES": "maroon",
+                "NIGHTLIFE": "darkblue",
+                "PETS_AND_ANIMALS": "darkgreen"
+            };
+            const color = businessColors[type] || "blue";
+            console.log(`getColorForBusinessType - Type: ${type}, Color: ${color}`);
+            return color;
+        }
+
+        function getColorForInstitutionType(type) {
+            const institutionColors = {
+                "GOVERNMENTAL": "red",
+                "HEALTHCARE": "yellow",
+                "PUBLIC_SAFETY_AND_EMERGENCY_SERVICES": "orange",
+                "JUDICIAL_AND_LEGAL": "purple",
+                "TRANSPORTATION_AND_INFRASTRUCTURE": "brown",
+                "ECONOMIC_AND_FINANCIAL": "gold",
+                "CULTURE_AND_SPORTS": "lime",
+                "SOCIAL_AND_WELFARE_SERVICES": "green",
+                "LABOR_AND_WORKFORCE": "cyan",
+                "RELIGIOUS_INSTITUTIONS": "darkred",
+                "EDUCATIONAL_INSTITUTION": "teal"
+            };
+            const color = institutionColors[type] || "blue";
+            console.log(`getColorForInstitutionType - Type: ${type}, Color: ${color}`);
+            return color;
+        }
+
+        function displayAreaDetails(area) {
+            const businessData = area.business_data || 'N/A';
+            const institutionData = area.institution_data || 'N/A';
+            const userName = area.user_name || 'Unknown';  // Handle missing user_name gracefully
+
+            const detailsHtml = `
+                <h3>Area ID: ${area.id}</h3>
+                <p><strong>Coordinates:</strong> ${JSON.stringify(area.coordinates)}</p>
+                <p><strong>Radius:</strong> ${area.radius}</p>
+                <p><strong>Added By:</strong> ${userName}</p> <!-- Show user_name here -->
+                <p><strong>Missing Businesses:</strong> ${area.missing_businesses.join(', ')}</p>
+                <p><strong>Missing Institutions:</strong> ${area.missing_institutions.join(', ')}</p>
+                <p><strong>Business Data:</strong> ${businessData}</p>
+                <p><strong>Institution Data:</strong> ${institutionData}</p>
+            `;
+
+            const popup = L.popup()
+                .setLatLng(area.coordinates[0])  // Position the popup near the circle
+                .setContent(detailsHtml)
+                .openOn(map);
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize state variables for the buttons
+        const buttonStates = {
+            HOME: false,
+            WORK: false,
+            OTHER: false,
+            LINE: false,
+            CIRCLE: false,
+        };
+
+        // Function to handle button toggle
+        function toggleButton(button, mode) {
+            if (buttonStates[mode]) {
+                button.classList.remove('active');
+                buttonStates[mode] = false;
+                // Reset functionality (clear drawings, reset mode, etc.)
+                if (mode === 'LINE' || mode === 'CIRCLE') {
+                    drawnItems.clearLayers();
+                    currentDrawingMode = null;
+                    document.getElementById('radiusControlGroup').style.display = 'none';
+                } else {
+                    currentAreaType = null;
+                }
+            } else {
+                // Reset other buttons in the same group and activate the current button
+                if (mode === 'HOME' || mode === 'WORK' || mode === 'OTHER') {
+                    // Reset area type buttons
+                    Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                        if (btn.textContent.includes('Area')) {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    buttonStates.HOME = buttonStates.WORK = buttonStates.OTHER = false;
+                } else if (mode === 'LINE' || mode === 'CIRCLE') {
+                    // Reset drawing mode buttons
+                    Array.from(document.querySelectorAll('.button-group button')).forEach(btn => {
+                        if (btn.textContent.includes('Draw')) {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    buttonStates.LINE = buttonStates.CIRCLE = false;
+                }
+
+                // Activate the current button and set functionality
+                button.classList.add('active');
+                buttonStates[mode] = true;
+
+                if (mode === 'LINE' || mode === 'CIRCLE') {
+                    currentDrawingMode = mode;
+                    document.getElementById('radiusControlGroup').style.display = mode === 'CIRCLE' ? 'block' : 'none';
+                } else {
+                    currentAreaType = mode;
+                }
+            }
+        }
+
+        // Attach event listeners to all buttons
+        document.querySelectorAll('.button-group button').forEach(button => {
+            button.addEventListener('click', function () {
+                const mode = this.textContent.includes('Home') ? 'HOME' :
+                    this.textContent.includes('Work') ? 'WORK' :
+                    this.textContent.includes('Other') ? 'OTHER' :
+                    this.textContent.includes('Line') ? 'LINE' :
+                    this.textContent.includes('Circle') ? 'CIRCLE' : null;
+
+                if (mode) {
+                    toggleButton(this, mode);
+                }
+
+                });
+            });
+        });
+
+    </script>
+</body>
+</html>

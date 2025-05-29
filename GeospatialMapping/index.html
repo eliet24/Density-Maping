@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <title>Google Maps with Questions</title>
+
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+
+        #question-container {
+            text-align: center;
+            font-size: 28px; /* Increase font size */
+            font-weight: bold;
+            padding: 15px;
+            background-color: #06b2dd; 
+            color: #042d46; 
+            border: 3px solid #062f64; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+            animation: pulse 1.5s infinite alternate; /* Apply animation */
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            10% { transform: scale(1.05); } /* Slight zoom-in effect */
+        }
+        
+        #map { 
+            height: 85vh; 
+            width: 100%; 
+            position: relative; 
+        }
+
+        .approve-marker-btn {
+            background-color: #28a745; /* Professional green color */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px; /* Increased size for better visibility */
+            height: 45px;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2); /* Adds depth */
+            transition: all 0.2s ease-in-out;
+        }
+
+        .approve-marker-btn:hover {
+            background-color: #218838; /* Darker green on hover */
+            transform: translate(-50%, -50%) scale(1.1); /* Slight scaling effect */
+        }
+
+        .approve-marker-btn:active {
+            background-color: #1e7e34; /* Even darker on click */
+            transform: translate(-50%, -50%) scale(0.95); /* Small shrink effect */
+        }
+
+        #search-box {
+            position: absolute;
+            top: 115px;
+            right: 4px;
+            z-index: 12;
+            background-color: white;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #search-box input {
+            border: none;
+            outline: none;
+            padding: 4px 12px;
+            font-size: 20px;
+            width: 180px;
+            font-family: Arial, sans-serif;
+            border-radius: 20px;
+        }
+        #search-box input::placeholder {
+            color: #aaa;
+            font-style: italic;
+        }
+        #search-box input:focus {
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Blue glow */
+        }
+    </style>
+</head>
+<body>
+    <!-- Question Container -->
+    <div id="question-container">Loading...</div>
+
+    <!-- Search Box -->
+    <div id="search-box">
+        <input id="pac-input" type="text" placeholder="Google חיפוש במפות">
+    </div>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Approve Button -->
+    <!-- <button id="approve-btn"> הוספת המיקום</button> -->
+
+    <div class="error-message" id="error-message" style="display: none;"></div>
+
+    <script>
+        const questions = [
+            { key: "FOOD", text: "?איפה אתם עושים קניות של מוצרי מזון" },
+            { key: "FASHION", text: "?איפה אתם קונים בגדים" },
+            { key: "NIGHTLIFE_AND_FUN", text: "?איפה אתם יוצאים לבלות" },
+            { key: "KINDERGARTEN", text: "?איפה הגן ילדים" },
+            { key: "SCHOOL", text: "?איפה הבית ספר" },
+            { key: "RELIGION", text: "?איפה הבית כנסת" }
+        ];
+
+        const categoryTypeMapping = {
+            "FOOD": ["supermarket", "grocery_or_supermarket", "food"],
+            "FASHION": ["clothing_store", "shoe_store", "fashion_store"],
+            "NIGHTLIFE_AND_FUN": ["bar", "pub", "night_club"],
+            "KINDERGARTEN": ["school", "kindergarten"],
+            "SCHOOL": ["school"],
+            "RELIGION": ["church", "synagogue", "mosque"]
+        };
+
+
+        let currentQuestionIndex = 0;
+        let map, marker = null;
+        let searchBox;
+        let selectedCoordinates = { latitude: null, longitude: null, name: null };
+        let projectCode = null; 
+        let approveBtn = null; 
+
+        // Fetch project details and initialize the map
+        async function fetchProjectCode() {
+            try {
+                projectCode = getQueryParameter('projectCode');
+                if (!projectCode) {
+                    alert("Error: Missing project code. Please contact the administrator.");
+                    throw new Error("Missing project code in URL");
+                }
+                // Initialize the map after fetching project code
+                initMap();
+            } catch (error) {
+                console.error("Error fetching project code:", error);
+            }
+        }
+
+        function getQueryParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        
+        // 📍 Set marker on the map
+        function setMarkerAtLocation(location, name = "Selected Location") {
+            createApproveButton(); // Ensure the button is created
+            if (marker) marker.setMap(null); // Remove previous marker if any
+
+            // Create a new marker at the clicked location
+            marker = new google.maps.Marker({
+                map: map,
+                position: location,
+                title: name
+            });
+
+            // Position the approve button next to the marker
+            positionApproveButton(location);
+        }
+
+        // Handle map click - place marker & fetch location details
+        function handleMapClick(event) {
+            const clickedLocation = event.latLng;
+            let addressRetrieved = false; // ✅ Declare the variable properly
+            if (!clickedLocation || isNaN(clickedLocation.lat()) || isNaN(clickedLocation.lng())) {
+                console.error("❌ Invalid location detected in handleMapClick()");
+                return;
+            }
+
+            // Reset selectedCoordinates
+            selectedCoordinates = {
+                latitude: clickedLocation.lat(),
+                longitude: clickedLocation.lng(),
+                name: "Retrieving address..."
+            };
+
+            // Remove previous marker
+            if (window.currentMarker) {
+                window.currentMarker.setMap(null);
+            }
+
+            if (window.approveBtn) {
+                window.approveBtn.remove();
+            }
+
+            // Create the approve button if not already created
+            createApproveButton();
+
+            // Place a new marker
+            window.currentMarker = new google.maps.Marker({
+                position: clickedLocation,
+                map: map,
+                title: "Selected Location"
+            });
+
+            // Position the button correctly
+            setTimeout(() => {
+                positionApproveButton(clickedLocation);
+            }, 100); // Small delay to ensure map updates
+
+            // Click event for saving location
+            approveBtn.onclick = approvePoint;
+
+            console.log("📍 Clicked Location:", selectedCoordinates.latitude, selectedCoordinates.longitude);
+
+            // 1️⃣ Try Google Places API first
+
+            /*
+            const service = new google.maps.places.PlacesService(map);
+            const request = { location: clickedLocation, radius: 100, type: ["store"] };
+
+            service.nearbySearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    const place = results[0];
+                    service.getDetails(
+                        { placeId: place.place_id, fields: ["name", "formatted_address"] },
+                        (placeDetails, detailsStatus) => {
+                            if (detailsStatus === google.maps.places.PlacesServiceStatus.OK) {
+                                selectedCoordinates.name = `${placeDetails.name}, ${placeDetails.formatted_address}`;
+                                addressRetrieved = true;
+                            } else {
+                                console.warn("⚠️ Google Places details lookup failed:", detailsStatus);
+                            }
+                        }
+                    );
+                } else {
+                    console.warn("⚠️ Google Places nearby search failed:", status);
+                }
+            });
+            */
+
+            // Run Google Geocoder and OpenStreetMap in parallel    
+            Promise.all([
+                new Promise(resolve => fallbackToGeocoder(clickedLocation, resolve)),
+                new Promise(resolve => fetchAlternativeGeocode(clickedLocation.lat(), clickedLocation.lng(), resolve)),
+                new Promise(resolve => fetchHereMapsReverse(clickedLocation.lat(), clickedLocation.lng(), resolve))
+                ]).then(results => {
+                const address = results.find(r => r !== null);
+                if (!addressRetrieved) {
+                    selectedCoordinates.name = address || `Lat: ${clickedLocation.lat()}, Lng: ${clickedLocation.lng()}`;
+                }
+            });
+        }
+
+        // Fallback method if nearbySearch fails
+        function fallbackToGeocoder(location, callback) {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location }, (results, status) => {
+                if (status === "OK" && results.length > 0) {
+                    callback(results[0].formatted_address);
+                } else {
+                    callback(null);
+                }
+            });
+        }
+
+        function fetchAlternativeGeocode(lat, lng, callback) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                .then(response => response.json())
+                .then(data => callback(data.display_name || null))
+                .catch(() => callback(null));
+        }
+
+        function fetchHereMapsReverse(lat, lng, callback) {
+            const apiKey = "AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY"; // Replace with real key
+            fetch(`https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lng}&lang=en-US&apikey=${apiKey}`)
+                .then(res => res.json())
+                .then(data => callback(data.items?.[0]?.address?.label || null))
+                .catch(() => callback(null));
+        }
+
+        function createApproveButton() {
+            // Create the button only once
+            if (!approveBtn) {
+                approveBtn = document.createElement("button");
+                approveBtn.innerHTML = '<i class="fas fa-check"></i>'; // Green V button
+                approveBtn.classList.add("approve-marker-btn");
+                approveBtn.onclick = approvePoint;
+                document.getElementById("map").appendChild(approveBtn);
+            }
+        }
+
+        function positionApproveButton(location) {
+            // Use OverlayView for correct position calculation
+            const overlay = new google.maps.OverlayView();
+
+            overlay.onAdd = function () {
+                const layer = this.getPanes().overlayMouseTarget;
+                layer.appendChild(approveBtn); // Attach the button to the overlay pane
+            };
+
+            overlay.draw = function () {
+                const projection = this.getProjection();
+                if (!projection) return;
+
+                // Calculate position based on LatLng
+                const position = projection.fromLatLngToDivPixel(location);
+
+                // Adjust button position relative to the marker
+                approveBtn.style.position = "absolute";
+                approveBtn.style.left = `${position.x}px`;
+                approveBtn.style.top = `${position.y}px`;
+                approveBtn.style.transform = "translate(-50%, -50%)"; // Center the button
+                approveBtn.style.zIndex = 100; // Ensure the button stays on top of map layers
+                approveBtn.style.pointerEvents = "auto"; // Enable button click events
+
+                // Set visibility to ensure the button is always visible and functional
+                approveBtn.style.display = "block";
+            };
+
+            overlay.setMap(map); // Attach to the map to make it positionable
+        }
+
+
+        // ✅ Approve & Save selected location
+        async function approvePoint() {
+            if (!selectedCoordinates.latitude || !selectedCoordinates.longitude) {
+                alert("אנא בחר מיקום על המפה.");
+                return;
+            }
+
+            // Check if the address is still being retrieved
+            /*
+            if (selectedCoordinates.name === "Retrieving address...") {
+                alert("יש לוודא שהמיקום הנבחר תקין!");
+                return; // Prevent saving until address is retrieved
+            }
+            */
+
+            if (selectedCoordinates.name === "Retrieving address...") {
+                const result = await Swal.fire({
+                    title: "המיקום שנבחר אינו עסק",
+                    text: "האם להמשיך בשמירת המיקום?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "כן, שמור מיקום",
+                    cancelButtonText: "לא, חזור למפה",
+                    reverseButtons: true,
+                    focusCancel: true
+                });
+
+                if (!result.isConfirmed) {
+                    // User chose "No" → Do nothing, allow user to pick a new point
+                    if (window.currentMarker) window.currentMarker.setMap(null);
+                    if (window.approveBtn) window.approveBtn.remove();
+                    if (approveBtn) {
+                        approveBtn.remove();
+                        approveBtn = null;
+                    }
+                    return;
+                }
+                // If user pressed "Yes" → continue saving with whatever data we have
+            }
+
+
+            const currentQuestion = questions[currentQuestionIndex];
+
+            try {
+                const response = await fetch("/save_location/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        latitude: selectedCoordinates.latitude,
+                        longitude: selectedCoordinates.longitude,
+                        name: selectedCoordinates.name, // ✅ Ensuring a valid name
+                        location_type: currentQuestion.key,
+                        project_code: projectCode
+                    })
+                });
+
+                const data = await response.json();
+                console.log("📌 Saved:", data);
+                Swal.fire({
+                    icon: "success",
+                    title: "תודה!",
+                    text: "המיקום נשמר!",
+                    confirmButtonText: "אישור"
+                });
+
+                currentQuestionIndex++;
+                updateQuestion();
+
+                // Reset selected coordinates and clear marker
+                selectedCoordinates = { latitude: null, longitude: null, name: null };
+                if (window.currentMarker) window.currentMarker.setMap(null);
+                document.getElementById("pac-input").value = "";
+
+            } catch (error) {
+            console.error("❌ Error saving data:", error);
+            alert("There was an error saving the location.");
+            }
+        }
+
+        /*
+        function updateQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                document.getElementById("question-container").innerText = questions[currentQuestionIndex].text;
+            } else {
+                document.getElementById("question-container").innerText = "Thank You";
+                //document.getElementById("approve-btn").style.display = "none";
+                setTimeout(() => {
+                    try {
+                        window.close(); // Try closing normally
+
+                        // If close fails, force close by opening an empty page
+                        window.open("about:blank", "_self").close();
+                    } catch (e) {
+                        console.error("Window close failed:", e);
+                        window.location.href = "about:blank"; // As a last resort, redirect
+                    }
+                }, 2000);
+            }
+        }
+        */
+
+        function updateQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const currentQuestion = questions[currentQuestionIndex];
+                document.getElementById("question-container").innerText = currentQuestion.text;
+                
+                // NEW: Search businesses matching this question!
+                searchBusinessesNearby(currentQuestion.key);
+
+            } else {
+                document.getElementById("question-container").innerText = "Thank You";
+                
+                // Optionally clear businesses when finished
+                currentBusinessMarkers.forEach(marker => marker.setMap(null));
+                currentBusinessMarkers = [];
+
+                setTimeout(() => {
+                    try {
+                        window.close();
+                        window.open("about:blank", "_self").close();
+                    } catch (e) {
+                        console.error("Window close failed:", e);
+                        window.location.href = "about:blank";
+                    }
+                }, 2000);
+            }
+        }
+
+
+        function initMap() 
+        {
+            console.log("Initializing map...");
+
+            // Fetch project details using the project code
+            fetchProjectDetails(projectCode)
+                .then(project => {
+                    if (!project || !project.address) return;
+
+                    // Geocode the project address
+                    return geocodeAddress(project.address);
+                })
+                .then(coordinates => {
+                    if (!coordinates) return;
+
+                    // Initialize the map
+                    map = new google.maps.Map(document.getElementById("map"), {
+                        center: coordinates,
+                        zoom: 14
+                    });
+
+                    // Initial marker for project location
+                    window.initialMarker = new google.maps.Marker({
+                        position: coordinates,
+                        map: map,
+                        title: "Project Location",
+                        icon: {
+                            //url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                            url: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"
+                        }
+                    });
+
+                    // Add click event listener to the map
+                    map.addListener("click", handleMapClick);
+
+                    // Attach the search box
+                    const input = document.getElementById("pac-input");
+                    searchBox = new google.maps.places.SearchBox(input);
+
+                    updateQuestion();
+
+                    // Listen for search box results
+                    /*
+                    searchBox.addListener("places_changed", () => {
+                        const places = searchBox.getPlaces();
+                        if (places.length === 0) return;
+                        const place = places[0];
+
+                        // Remove previous marker and button
+                        if (window.currentMarker) window.currentMarker.setMap(null);
+                        if (window.approveBtn) window.approveBtn.remove();
+                        if (approveBtn) {
+                            approveBtn.remove();
+                            approveBtn = null;
+                        }
+
+                        setMarkerAtLocation(place.geometry.location, place.name || "Searched Location");
+
+                        // Update the map to zoom and center on the place
+                        map.panTo(place.geometry.location);
+                        map.setZoom(15);
+
+                        // Store selected coordinates and name
+                        selectedCoordinates.latitude = place.geometry.location.lat();
+                        selectedCoordinates.longitude = place.geometry.location.lng();
+                        selectedCoordinates.name = place.name ? `${place.name}, ${place.formatted_address}` : place.formatted_address;
+                        console.log("📍 Selected Location:", selectedCoordinates.name);
+
+                        // Create the approve button
+                        if (!approveBtn) {
+                            approveBtn = document.createElement("button");
+                            approveBtn.innerHTML = "✔";
+                            approveBtn.classList.add("approve-marker-btn");
+                            document.getElementById("map").appendChild(approveBtn);
+                        }
+
+                        // Position the button after a small delay
+                        setTimeout(() => {
+                            positionApproveButton(place.geometry.location);
+                        }, 100);
+
+                        // Click event for saving location
+                        approveBtn.onclick = approvePoint;
+                    });
+                    */
+
+                    searchBox.addListener("places_changed", () => {
+                        const places = searchBox.getPlaces();
+                        if (places.length === 0) return;
+                        const place = places[0];
+
+                        if (!place.place_id) {
+                            console.error("No place_id found");
+                            return;
+                        }
+
+                        const service = new google.maps.places.PlacesService(map);
+
+                        service.getDetails(
+                            { 
+                                placeId: place.place_id, 
+                                fields: ["name", "geometry", "formatted_address"] // Only request what you need
+                            }, 
+                            (placeDetails, status) => {
+                                if (status !== google.maps.places.PlacesServiceStatus.OK) {
+                                    console.error("PlacesService getDetails failed:", status);
+                                    return;
+                                }
+
+                                const exactLocation = placeDetails.geometry.location;
+
+                                // Remove previous marker and button
+                                if (window.currentMarker) window.currentMarker.setMap(null);
+                                if (window.approveBtn) window.approveBtn.remove();
+                                if (approveBtn) {
+                                    approveBtn.remove();
+                                    approveBtn = null;
+                                }
+
+                                // 📍 NOW use the exact location!
+                                setMarkerAtLocation(exactLocation, placeDetails.name || "Searched Location");
+
+                                // Update the map to zoom and center on the place
+                                map.panTo(exactLocation);
+                                map.setZoom(20);
+
+                                // Store selected coordinates and name
+                                selectedCoordinates.latitude = exactLocation.lat();
+                                selectedCoordinates.longitude = exactLocation.lng();
+                                selectedCoordinates.name = placeDetails.name 
+                                    ? `${placeDetails.name}, ${placeDetails.formatted_address}` 
+                                    : placeDetails.formatted_address;
+
+                                console.log("📍 Selected Location (accurate):", selectedCoordinates.name);
+
+                                // Create the approve button
+                                if (!approveBtn) {
+                                    approveBtn = document.createElement("button");
+                                    approveBtn.innerHTML = '<i class="fas fa-check"></i>'; 
+                                    approveBtn.classList.add("approve-marker-btn");
+                                    document.getElementById("map").appendChild(approveBtn);
+                                }
+
+                                // Position the button after a small delay
+                                setTimeout(() => {
+                                    positionApproveButton(exactLocation);
+                                }, 100);
+
+                                // Click event for saving location
+                                approveBtn.onclick = approvePoint;
+                            }
+                        );
+                    });
+
+                    // Click event for saving location
+                    //document.getElementById("approve-btn").addEventListener("click", approvePoint);
+
+                })
+                .catch(error => {
+                    console.error("Error initializing map:", error);
+                });
+        }
+
+        async function fetchProjectDetails(code) {
+            try {
+                // Fetch project details from the backend
+                const response = await fetch(`/get_project/${code}`);
+                //const response = await fetch(`http://127.0.0.1:8000/get_project/${code}`);  //For Debug
+                if (!response.ok) throw new Error("Failed to fetch project details.");
+                return await response.json();
+            } catch (error) {
+                console.error("Error fetching project details:", error);
+                document.getElementById("error-message").style.display = "block";
+                document.getElementById("error-message").textContent = "Failed to fetch project details. Please try again.";
+                return null;
+            }
+        }
+
+        async function geocodeAddress(address) {
+            try {
+                // Use the Google Geocoding API to get coordinates
+                const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY`);
+                const data = await response.json();
+                if (data.status === "OK" && data.results.length > 0) {
+                    return data.results[0].geometry.location; // { lat, lng }
+                } else {
+                    throw new Error(data.error_message || "Address not found.");
+                }
+            } catch (error) {
+                console.error("Error geocoding address:", error);
+                document.getElementById("error-message").style.display = "block";
+                document.getElementById("error-message").textContent = "Unable to locate the project address. Please check the details.";
+                return null;
+            }
+        }
+
+        let currentBusinessMarkers = []; // Keep track of markers to remove them later
+
+        function searchBusinessesNearby(categoryKey) 
+        {
+            if (!map) return;
+            const types = categoryTypeMapping[categoryKey];
+            if (!types) return;
+
+            // Clear previous business markers
+            currentBusinessMarkers.forEach(marker => marker.setMap(null));
+            currentBusinessMarkers = [];
+
+            const service = new google.maps.places.PlacesService(map);
+
+            types.forEach(type => {
+                const request = {
+                    location: map.getCenter(),
+                    radius: 7000, // meters around center (adjust if needed)
+                    type: type
+                };
+
+                service.nearbySearch(request, (results, status) => 
+                {
+                    if (status === google.maps.places.PlacesServiceStatus.OK) 
+                    {
+                        results.forEach(place => {
+                            if (!place.place_id) return;
+                            service.getDetails({
+                                placeId: place.place_id,
+                                fields: ["name", "geometry", "formatted_address"]
+                            }, (details, status) => 
+                            {
+                                if (status !== google.maps.places.PlacesServiceStatus.OK) {
+                                    console.warn("getDetails failed:", status);
+                                    return;
+                                }
+                                const exactLocation = details.geometry.location;                           
+
+                                const marker = new google.maps.Marker({
+                                    map: map,
+                                    position: place.geometry.location,
+                                    title: place.name,
+                                    icon: {
+                                        url: "https://maps.google.com/mapfiles/ms/icons/pink-dot.png", // Custom icon for businesses
+                                        scaledSize: new google.maps.Size(32, 32)
+                                    }
+                                });
+
+                                currentBusinessMarkers.push(marker);
+
+                                marker.addListener('click', () => {
+                                    const clickedLocation = marker.getPosition();
+
+                                    // Reset selectedCoordinates
+                                    selectedCoordinates = {
+                                        latitude: exactLocation.lat(),
+                                        longitude: exactLocation.lng(),
+                                        name: `${details.name}, ${details.formatted_address}` || "Selected Business"
+                                    };
+
+                                    // Remove previous red marker if exists
+                                    if (window.currentMarker) window.currentMarker.setMap(null);
+                                    if (window.approveBtn) window.approveBtn.remove();
+                                    if (approveBtn) {
+                                        approveBtn.remove();
+                                        approveBtn = null;
+                                    }
+
+                                    // Create new red marker at business location
+                                    window.currentMarker = new google.maps.Marker({
+                                        //position: clickedLocation,
+                                        position: exactLocation,
+                                        map: map,
+                                        title: details.name || "Selected Business",
+                                        icon: {
+                                            url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                                            scaledSize: new google.maps.Size(16, 16)
+                                        }
+                                    });
+
+                                    // Create green approve button
+                                    createApproveButton();
+                                    setTimeout(() => {
+                                        //positionApproveButton(clickedLocation);
+                                        positionApproveButton(exactLocation);
+                                    }, 100);
+
+                                    approveBtn.onclick = approvePoint;
+
+                                    console.log("📍 Business Marker Selected:", selectedCoordinates.latitude, selectedCoordinates.longitude);
+                                });
+                            });
+                        });
+                    } else {
+                        console.error("Failed to search nearby businesses:", status);
+                    }
+                });
+            });
+        }
+
+        // Fetch the latest project code and initialize map
+        document.addEventListener('DOMContentLoaded', fetchProjectCode);
+        
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyActDT3BMeqymgsIrLQb6KgfL83k63caQY&libraries=places&callback=initMap" async defer></script>
+</body>
+</html>
