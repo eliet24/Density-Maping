@@ -498,9 +498,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support, questions, or feature requests:
 
-- 📧 Email: [your-email@domain.com]
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/GeospatialMapping/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/GeospatialMapping/discussions)
+- 📧 Email: elietin24@live.com
+- 🐛 Issues: https://github.com/eliet24/Density-Maping/tree/main
+- 💬 Discussions: [GitHub Discussions](https://github.com/eliet24/Density-Maping/discussions)
 
 ## 🙏 Acknowledgments
 
